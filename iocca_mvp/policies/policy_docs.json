@@ -1,0 +1,23 @@
+[
+    {
+      "id": "no_legal_crew",
+      "title": "No Legal Crew Available",
+      "text": "If no legal crew can be found due to rest or duty violations, escalate to ops center. Contact duty manager for extension approval."
+    },
+    {
+      "id": "hotel_overflow",
+      "title": "Hotel Overflow",
+      "text": "In case of full hotel capacity, crew must be booked in backup lodging within 50 miles. Notify crew scheduling immediately."
+    },
+    {
+      "id": "weather_delay",
+      "title": "Weather Delay Protocol",
+      "text": "For weather delays, crew duty may be extended by up to 2 hours with manager approval."
+    },
+    {
+      "id": "maintenance_delay",
+      "title": "Maintenance Delay",
+      "text": "If maintenance exceeds 4 hours, crew should be reassigned. Begin spare crew search and passenger comms."
+    }
+  ]
+  
