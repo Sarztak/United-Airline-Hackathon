@@ -2,6 +2,8 @@
 
 from agents.crew_assignment import handle_crew_assignment
 from agents.ops_support import handle_ops_support
+from agents.policy_agent_llm import llm_policy_reason
+from orchestrator.orchestrator import Orchestrator
 import pandas as pd
 
 def simulate_disruption():
@@ -30,38 +32,33 @@ def simulate_disruption():
 
     duty_rules = {"max_duty_hours": 8, "min_rest_hours": 10}
 
-    crew_df = pd.DataFrame(crew_roster)
-    flight_df = pd.DataFrame(flight_schedule)
-    hotel_df = pd.DataFrame(hotel_inventory)
-    reposition_df = pd.DataFrame(reposition_flights)
-
     print("\n🚨 Disruption Detected: UA123 delayed 3.5 hours at ORD\n")
 
-    print("[1] Running Crew Assignment Agent...")
-    crew_result = handle_crew_assignment(
-        flight_id="UA123",
-        crew_roster_df=crew_df,
-        flight_schedule_df=flight_df,
-        repositioning_flights_df=reposition_df,
+    orchestrator = Orchestrator(
+        crew_agent=handle_crew_assignment,
+        ops_agent=handle_ops_support,
+        policy_agent=llm_policy_reason
+    )
+
+    results = orchestrator.handle_disruption(
+        crew_roster=crew_roster,
+        flight_schedule=flight_schedule,
+        hotel_inventory=hotel_inventory,
+        reposition_flights=reposition_flights,
         duty_rules=duty_rules
     )
-    print("Status:", crew_result["status"])
-    print("Message:", crew_result["message"])
 
-    if crew_result.get("policy"):
-        print("Escalation Policy:", crew_result["policy"]["title"])
-
-    if crew_result["status"] in ["reassigned", "repositioning_initiated"]:
-        print("\n[2] Running Ops Support Agent...")
-        crew_id = crew_result.get("spare_used")
-        origin = flight_df.loc[flight_df["flight_id"] == "UA123", "origin"].iloc[0]
-        ops_result = handle_ops_support(crew_id, origin, hotel_df)
-
-        print("Status:", ops_result["status"])
-        print("Message:", ops_result["message"])
-
-        if ops_result.get("policy"):
-            print("Escalation Policy:", ops_result["policy"]["title"])
+    print("\n===== Orchestration Results =====\n")
+    for step in results["steps"]:
+        for key, value in step.items():
+            print(f"[{key.upper()}]")
+            if isinstance(value, dict):
+                for k, v in value.items():
+                    print(f"  {k}: {v}")
+            else:
+                print(value)
+            print()
+    print(f"FINAL STATUS: {results['final_status']}")
 
 if __name__ == "__main__":
     simulate_disruption()

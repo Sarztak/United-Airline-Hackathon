@@ -1,0 +1,38 @@
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*.so
+
+# Environment variables and secrets
+.env
+.env.local
+*.key
+*.pem
+credentials.json
+
+# Virtual environments
+.venv/
+env/
+venv/
+
+# macOS system files
+.DS_Store
+
+# Editor/IDE files
+.vscode/
+.idea/
+*.swp
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+
+# Cursor & Claude history (optional)
+.cursor-history/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Logs
+*.log
