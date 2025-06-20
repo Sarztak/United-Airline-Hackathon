@@ -2,7 +2,7 @@ class Prompts():
     def __init__(self):
         pass
 
-    def entry_prompt(current_flight_data):            
+    def entry_prompt(self, current_flight_data):            
         prompt = f"""
                     You are an airline crew disruption management agent.
                     Your job is to ensure that flight crew assignments remain legal and operational despite disruptions like delays.

@@ -9,23 +9,23 @@ flight_schedule_df = pd.DataFrame([
         "sched_dep": "2024-08-10 08:00",
         "sched_arr": "2024-08-10 11:00",
         "aircraft_type": "B737",
-        "delay_minutes": 21,  # 3.5 hr delay
+        "delay_minutes": 210,  # 3.5 hr delay
         "status": "delayed",
         "gate": "C5",
         "remarks": "ground stop"
     },
-    {
-        "flight_id": "UA456",
-        "origin": "SFO",
-        "destination": "DEN",
-        "sched_dep": "2024-08-10 12:00",
-        "sched_arr": "2024-08-10 14:00",
-        "aircraft_type": "B737",
-        "delay_minutes": 0,
-        "status": "ontime",
-        "gate": "B12",
-        "remarks": ""
-    }
+    # {
+    #     "flight_id": "UA456",
+    #     "origin": "SFO",
+    #     "destination": "DEN",
+    #     "sched_dep": "2024-08-10 12:00",
+    #     "sched_arr": "2024-08-10 14:00",
+    #     "aircraft_type": "B737",
+    #     "delay_minutes": 0,
+    #     "status": "ontime",
+    #     "gate": "B12",
+    #     "remarks": ""
+    # }
 ])
 
 #  Crew Roster 
