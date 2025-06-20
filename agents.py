@@ -43,3 +43,14 @@ class StatusQueryAgents():
             return matched.iloc[0].to_dict()
 
         return {"error": "Please provide either flight_id or crew_id for the query."}
+
+class ActionExecutorAgents():
+    def __init__(self):
+        self.tools = []
+    
+
+class RuleEvaluatorAgents():
+    def __init__(self):
+        self.tools = []
+        
+        
