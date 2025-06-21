@@ -7,9 +7,9 @@ flight_schedule_df = pd.DataFrame([
         "origin": "ORD",
         "destination": "SFO",
         "sched_dep": "2024-08-10 08:00",
-        "sched_arr": "2024-08-10 11:00",
+        "sched_arr": "2024-08-10 14:00",
         "aircraft_type": "B737",
-        "delay_minutes": 210,  # 3.5 hr delay
+        "delay_minutes": "210",  # 3.5 hr delay
         "status": "delayed",
         "gate": "C5",
         "remarks": "ground stop"
@@ -138,4 +138,23 @@ repositioning_flights_df = pd.DataFrame([
         "sched_arr": "2024-08-10 15:00",
         "seats_available": True
     }
+])
+
+# hotels
+hotels_df = pd.DataFrame([
+    {"airport": "ORD", "hotel_name": "Airport Inn", "rooms_available": 2},
+    {"airport": "ORD", "hotel_name": "Crew Suites", "rooms_available": 0},
+    {"airport": "ORD", "hotel_name": "Terminal Lodge", "rooms_available": 3}
+])
+
+transport_df = pd.DataFrame([
+  {"airport": "ORD", "service_name": "ShuttleX", "seats_available": 4},
+  {"airport": "ORD", "service_name": "QuickCab", "seats_available": 0},
+  {"airport": "ORD", "service_name": "CrewVan", "seats_available": 3},
+])
+
+policies_df = pd.DataFrame([
+  {"topic": "crew disruption at ORD", "policy": "Notify Crew Ops manager and activate standby protocol."},
+  {"topic": "hotel unavailability", "policy": "Escalate to duty officer for external accommodation search."},
+  {"topic": "transport failure", "policy": "Offer ride-share reimbursement and notify crew directly."}
 ])
