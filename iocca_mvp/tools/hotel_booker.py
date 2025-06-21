@@ -1,3 +1,5 @@
+import random
+
 def book_hotel(location, crew_id, hotel_inventory_df):
     """
     Attempt to book hotel for crew at a given location.

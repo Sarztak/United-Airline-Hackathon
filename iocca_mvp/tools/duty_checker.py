@@ -1,5 +1,6 @@
 from datetime import datetime
 import pandas as pd
+import random
 
 def check_legality(crew_id, planned_start, planned_end, duty_rules, crew_roster_df):
     """
@@ -31,8 +32,16 @@ def check_legality(crew_id, planned_start, planned_end, duty_rules, crew_roster_
 
     crew_data = crew.iloc[0]
 
-    start_time = datetime.strptime(planned_start, "%Y-%m-%d %H:%M")
-    end_time = datetime.strptime(planned_end, "%Y-%m-%d %H:%M")
+    # Handle both ISO format and standard format
+    try:
+        start_time = datetime.fromisoformat(planned_start.replace('Z', '+00:00'))
+    except ValueError:
+        start_time = datetime.strptime(planned_start, "%Y-%m-%d %H:%M")
+    
+    try:
+        end_time = datetime.fromisoformat(planned_end.replace('Z', '+00:00'))
+    except ValueError:
+        end_time = datetime.strptime(planned_end, "%Y-%m-%d %H:%M")
     duty_duration = (end_time - start_time).total_seconds() / 3600
     max_duty = duty_rules.get('max_duty_hours', 8)
 
@@ -44,7 +53,10 @@ def check_legality(crew_id, planned_start, planned_end, duty_rules, crew_roster_
         }
 
     if pd.notna(crew_data['duty_end']):
-        prev_duty_end = datetime.strptime(crew_data['duty_end'], "%Y-%m-%d %H:%M")
+        try:
+            prev_duty_end = datetime.fromisoformat(crew_data['duty_end'].replace('Z', '+00:00'))
+        except ValueError:
+            prev_duty_end = datetime.strptime(crew_data['duty_end'], "%Y-%m-%d %H:%M")
         rest_duration = (start_time - prev_duty_end).total_seconds() / 3600
         min_rest = duty_rules.get('min_rest_hours', 10)
 

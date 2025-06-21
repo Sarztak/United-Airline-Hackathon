@@ -36,3 +36,21 @@ build/
 
 # Logs
 *.log
+logs/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Type checking
+.mypy_cache/
+
+# ML model cache
+model_cache/
+.cache/

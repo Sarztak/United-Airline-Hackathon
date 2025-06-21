@@ -1,3 +1,4 @@
+import random
 def query_crew_roster(flight_id=None, crew_id=None, crew_roster_df=None):
     """
     Fetch assigned crew for a flight or details for a specific crew member.
