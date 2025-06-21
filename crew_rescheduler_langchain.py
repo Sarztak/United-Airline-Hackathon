@@ -29,7 +29,7 @@ if __name__ == "__main__":
         verbose=True
     )
 
-    # print(agent.input_keys)
+    # print(agent.input_keys) for debugging
 
     for _, row in flight_schedule_df.iterrows():
         current_flight_data = (
@@ -40,40 +40,22 @@ if __name__ == "__main__":
             f"Remarks: {row['remarks']}\n"
             f"Aircraft type: {row['aircraft_type']}"
         )
-    
-    #     entry_prompt = crew_disruption_prompt_v1(current_flight_data)
-    #     result = result = agent.run({"": "", "input": entry_prompt})
-    #     print(result)
 
-    from langchain.prompts import PromptTemplate
-    from langchain.chains import LLMChain
-    from langchain.agents import AgentExecutor
-
-    # Your full prompt is already built
-    entry_prompt = build_final_prompt(current_flight_data)
-
-    # Minimal template that adds only scratchpad
-    template = "{entry_prompt}\nThought: {agent_scratchpad}"
-
-    prompt = PromptTemplate(
-        template=template,
-        input_variables=["entry_prompt", "agent_scratchpad"]
+    entry_prompt = build_final_prompt(
+        current_flight_data=current_flight_data, 
+        report_buffer=60
     )
 
-    llm_chain = LLMChain(llm=llm, prompt=prompt)
 
     agent = initialize_agent(
-    tools=status_query_tools.tools,
-    llm=llm,
-    agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-    verbose=True
+        tools=status_query_tools.tools,
+        llm=llm,
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        verbose=True
     )
 
-    result = agent.invoke({
-        "input": entry_prompt
-    })
+    result = agent.invoke(entry_prompt)
 
-    print(result)
 
 
 

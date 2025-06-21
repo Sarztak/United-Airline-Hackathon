@@ -71,7 +71,7 @@ class StatusQueryTools():
             Tool(
                 name="get_affected_crew",
                 func=self.get_affected_crew,
-                description="Retrieves the list of affected crew. Expects empty JSON input: {}."
+                description="Retrieves the list of affected crew. Expects empty JSON input"
             )
         ]
 
@@ -266,14 +266,15 @@ class StatusQueryTools():
         projected_dep = sched_dep + delay
         required_time = projected_dep - timedelta(minutes=report_buffer)
 
-        self.reposition_flight_df['sched_arr_dt'] = pd.to_datetime(self.reposition_flight_df['sched_arr'], format="%Y-%m-%d %H:%M")
+        df_copy = self.reposition_flight_df
+        df_copy['sched_arr_dt'] = pd.to_datetime(df_copy['sched_arr'], format="%Y-%m-%d %H:%M")
 
-        available_flights = self.reposition_flight_df[
-            (self.reposition_flight_df['origin'] == from_base) &
-            (self.reposition_flight_df['destination'] == to_airport) &
-            (self.reposition_flight_df['seats_available']) &
-            (self.reposition_flight_df['sched_arr_dt'] <= required_time)
-        ]
+        available_flights = df_copy[
+            (df_copy['origin'] == from_base) &
+            (df_copy['destination'] == to_airport) &
+            (df_copy['seats_available']) &
+            (df_copy['sched_arr_dt'] <= required_time)
+        ].drop(columns='sched_arr_dt')
 
         if available_flights.empty:
             return json.dumps(
@@ -283,7 +284,7 @@ class StatusQueryTools():
                 }
             )
         
-        self.reposition_flight_df.drop("sched_arr_dt", inplace=True)
+        
 
         earliest_available_flight = (
             available_flights
@@ -466,7 +467,7 @@ if __name__ == "__main__":
         """{"required_role": "FO", "qualified_aircraft": "B737","exclude_crew_ids": ["C001", "C002"]}"""
     )
     
-    repositioning_flight_result = test_status_query_agent.reposition_flight_finder("""{"from_base": "SFO", "to_airport": "ORD", "sched_dep": "2024-08-10 08:00", "delay_minutes": 210, "report_buffer": 60}""")
+    repositioning_flight_result = test_status_query_agent.reposition_flight_finder("""{"from_base": "SFO", "to_airport": "ORD", "sched_dep": "2024-08-10 15:00", "delay_minutes": 210, "report_buffer": 60}""")
 
     hotel_booking_result = test_status_query_agent.book_hotel(
         """{
@@ -506,4 +507,4 @@ if __name__ == "__main__":
 
 
     result = test_status_query_agent.get_affected_crew("""{}""")
-    print(result)
+    print(repositioning_flight_result)

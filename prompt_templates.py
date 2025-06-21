@@ -9,6 +9,7 @@ def crew_disruption_prompt_v1(current_flight_data):
                 Current flight data:
                 {current_flight_data}
 
+                
                 Available tools:
                 - query_crew_roster: Fetches crew assigned to a flight or details of a specific crew member. Expects Action Input as JSON with "flight_id" or "crew_id".
                 - duty_hour_checker: Checks crew duty legality.
@@ -92,6 +93,10 @@ def reposition_flight_finder_instruction():
     • "delay_minutes": the total delay in minutes.
     • "report_buffer": the minimum minutes before projected departure by which the crew must arrive. This value will be provided in the prompt (do not make up a value).
     - The Action Input must be valid JSON.
+    - When evaluating reposition flights, carefully compare sched_arr against required_time to determine suitability.
+    - Do not dismiss a reposition flight that meets required_time.
+    - When multiple repositioning flights are available, reason about and attempt them in order of earliest sched_arr that meets the required time.
+    - If the first chosen repositioning flight fails (for example, becomes unavailable), attempt the next available repositioning flight before moving to fallback actions or adding to the affected list.
     - If no repositioning flight is found for a spare crew member, and no other spare crew are available or suitable, you must use `add_affected_crew` to record the unresolved role.
     - Do not assume a repositioning flight is available. Always base your next step on the tool's actual output.
         """
@@ -107,7 +112,8 @@ def query_spare_pool_instruction():
     • "exclude_crew_ids": a list of crew IDs already assigned to the flight. This ensures you do not select a current non-legal crew member as a spare.
     - The Action Input must be valid JSON.
     - When multiple crew members are affected (e.g., both captain and FO are not legal), reason about replacements one role at a time. For each affected role, use this tool to search for suitable spare crew and process them before moving to the next affected role.
-    - When multiple spare crew are available for a role, reason about which one to try first (for example, prefer closest base or earliest rest availability).
+    - When multiple spare crew are found for a role, reason about which one to attempt first. If the first spare’s repositioning fails, attempt the next available spare before adding the role to the affected list.
+    - Do not move to fallback actions until all spare crew options for the role have been tried and found unsuitable.
     - After all spare crew and repositioning options for a given role have been exhausted, add the unresolved crew member to the affected list using the `add_affected_crew` tool before proceeding to fallback actions.
     - Do not assume spare crew availability. Always reason based on the actual tool output.
         """
@@ -159,7 +165,7 @@ def get_affected_crew_instruction():
     - Use the output of this tool as input to fallback tools. Do not assume you know the affected crew list without calling this tool.    
     """
 
-def build_final_prompt(current_flight_data: str) -> str:
+def build_final_prompt(current_flight_data: str, report_buffer: int) -> str:
     return f"""
     You are an airline crew disruption management agent.
 
@@ -169,6 +175,9 @@ def build_final_prompt(current_flight_data: str) -> str:
 
     Current flight data:
     {current_flight_data}
+
+    report_buffer:
+    {report_buffer}
 
     Available tools:
     - query_crew_roster: Fetches crew assigned to a flight or details of a specific crew member. Expects Action Input as JSON with "flight_id" or "crew_id".
@@ -218,5 +227,5 @@ if __name__ == "__main__":
         "remarks": "ground stop"
     },
     with open(".prompt_test", 'w') as w:
-        full_prompt = build_final_prompt(current_flight_data)
+        full_prompt = build_final_prompt(current_flight_data, 60)
         w.write(full_prompt)
