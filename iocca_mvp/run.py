@@ -7,7 +7,9 @@ import argparse
 import sys
 import os
 import subprocess
-from config import config
+from config import Config
+
+config = Config()
 
 def run_web_server():
     """Run the web server"""
