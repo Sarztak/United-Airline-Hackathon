@@ -3,14 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }}</title>
+    <title>{{ title }} | United Airlines IOCCA Hub</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f8f9fa; }
-        .card { box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); }
+        /* United Airlines Typography */
+        body { 
+            background-color: #f8f9fa; 
+            font-family: 'Helvetica Neue', 'Arial', sans-serif;
+        }
+        
+        /* United Airlines Color Palette */
+        :root {
+            --united-blue: #004E9E;
+            --united-dark-blue: #003366;
+            --united-light-blue: #009CDE;
+            --united-gold: #FFB700;
+            --united-gray: #6C757D;
+            --united-light-gray: #F8F9FA;
+        }
+        
+        .card { 
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 78, 158, 0.1);
+            border: 1px solid rgba(0, 78, 158, 0.1);
+        }
         .status-badge { font-size: 0.875rem; }
-        .agent-card { border-left: 4px solid #0051A5; }
+        .agent-card { border-left: 4px solid var(--united-blue); }
         .logs-container {
             height: 70vh;
             overflow-y: auto;
@@ -49,7 +67,7 @@
         }
         
         .agent-response-card {
-            border-left: 4px solid #0051A5;
+            border-left: 4px solid var(--united-blue);
             transition: all 0.3s ease;
         }
         
@@ -73,77 +91,179 @@
             white-space: pre-wrap;
         }
         
-        .metric-card { text-align: center; }
+        .metric-card { 
+            text-align: center; 
+            border-radius: 8px;
+            transition: transform 0.2s ease-in-out;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 78, 158, 0.15);
+        }
+        
         .processing { animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
         
-        /* Reasoning Log Specific Styles */
-        .reasoning-entry {
-            padding: 0.75rem 1rem;
-            border-bottom: 1px solid #e9ecef;
-            margin: 0;
-            font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
-            font-size: 0.85rem;
+        /* United Airlines Section Headers */
+        .card-header {
+            background-color: var(--united-light-gray);
+            border-bottom: 2px solid var(--united-blue);
+            font-weight: 600;
         }
         
-        .reasoning-entry.agent_chain { border-left: 4px solid #0051A5; background-color: #f8f9fc; }
-        .reasoning-entry.action { border-left: 4px solid #28a745; background-color: #f8fff9; }
-        .reasoning-entry.observation { border-left: 4px solid #ffc107; background-color: #fffef8; }
-        .reasoning-entry.thought { border-left: 4px solid #6f42c1; background-color: #fbf9ff; }
-        .reasoning-entry.http_request { border-left: 4px solid #fd7e14; background-color: #fff8f5; }
-        .reasoning-entry.final_answer { border-left: 4px solid #198754; background-color: #f0fff4; }
+        .card-header h5 {
+            color: var(--united-blue);
+            margin-bottom: 0;
+            font-weight: 700;
+        }
         
-        .reasoning-entry:hover {
-            background-color: #f1f3f5;
+        /* Enhanced Button Styling */
+        .btn-outline-primary {
+            border-color: var(--united-blue);
+            color: var(--united-blue);
+        }
+        
+        .btn-outline-primary:hover {
+            background-color: var(--united-blue);
+            border-color: var(--united-blue);
+        }
+        
+        .btn-primary {
+            background-color: var(--united-blue);
+            border-color: var(--united-blue);
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--united-dark-blue);
+            border-color: var(--united-dark-blue);
+        }
+        
+        /* Enhanced Reasoning Log Styles */
+        .reasoning-log-container {
+            height: 70vh;
+            overflow-y: auto;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+        }
+        
+        .reasoning-log-container.fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            background: white;
+            border: none;
+        }
+        
+        .reasoning-step-card {
+            margin: 0.5rem;
+            border: 1px solid #e9ecef;
+            border-radius: 0.5rem;
+            background: white;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            transition: all 0.3s ease;
+        }
+        
+        .reasoning-step-card:hover {
+            box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+            transform: translateY(-1px);
+        }
+        
+        .reasoning-step-card.agent_chain { border-left: 4px solid var(--united-blue); }
+        .reasoning-step-card.action { border-left: 4px solid #28a745; }
+        .reasoning-step-card.observation { border-left: 4px solid #ffc107; }
+        .reasoning-step-card.thought { border-left: 4px solid #6f42c1; }
+        .reasoning-step-card.http_request { border-left: 4px solid #fd7e14; }
+        .reasoning-step-card.final_answer { border-left: 4px solid #198754; }
+        
+        .reasoning-step-header {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e9ecef;
+            background-color: #f8f9fa;
             cursor: pointer;
         }
         
-        .reasoning-timestamp {
-            color: #6c757d;
-            font-size: 0.7rem;
+        .reasoning-step-title {
             font-weight: 600;
             margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
         
-        .reasoning-type {
+        .reasoning-step-badge {
             display: inline-block;
-            padding: 0.125rem 0.5rem;
+            padding: 0.25rem 0.5rem;
             border-radius: 0.25rem;
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             font-weight: 600;
             text-transform: uppercase;
-            margin-bottom: 0.5rem;
         }
         
-        .reasoning-type.agent_chain { background-color: #0051A5; color: white; }
-        .reasoning-type.action { background-color: #28a745; color: white; }
-        .reasoning-type.observation { background-color: #ffc107; color: black; }
-        .reasoning-type.thought { background-color: #6f42c1; color: white; }
-        .reasoning-type.http_request { background-color: #fd7e14; color: white; }
-        .reasoning-type.final_answer { background-color: #198754; color: white; }
+        .reasoning-step-badge.agent_chain { background-color: var(--united-blue); color: white; }
+        .reasoning-step-badge.action { background-color: #28a745; color: white; }
+        .reasoning-step-badge.observation { background-color: #ffc107; color: black; }
+        .reasoning-step-badge.thought { background-color: #6f42c1; color: white; }
+        .reasoning-step-badge.http_request { background-color: #fd7e14; color: white; }
+        .reasoning-step-badge.final_answer { background-color: #198754; color: white; }
         
-        .reasoning-content {
-            white-space: pre-wrap;
-            line-height: 1.4;
+        .reasoning-step-meta {
+            font-size: 0.75rem;
+            color: #6c757d;
             margin-top: 0.25rem;
         }
         
-        .reasoning-metadata {
-            font-size: 0.75rem;
-            color: #6c757d;
-            margin-top: 0.5rem;
-            padding-top: 0.5rem;
+        .reasoning-step-content {
+            padding: 1rem;
+            display: none;
+        }
+        
+        .reasoning-step-content.expanded {
+            display: block;
+        }
+        
+        .reasoning-content-text {
+            font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            background-color: #f8f9fa;
+            padding: 0.75rem;
+            border-radius: 0.25rem;
+            border: 1px solid #e9ecef;
+        }
+        
+        .reasoning-metadata-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
             border-top: 1px solid #e9ecef;
+        }
+        
+        .reasoning-metadata-item {
+            font-size: 0.75rem;
+        }
+        
+        .reasoning-metadata-item strong {
+            color: var(--united-blue);
+            display: block;
+            margin-bottom: 0.125rem;
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #0051A5;">
+    <nav class="navbar navbar-expand-lg navbar-light" style="background-color: #ffffff; border-bottom: 3px solid var(--united-blue); box-shadow: 0 2px 4px rgba(0,78,158,0.1);"
         <div class="container">
-            <a class="navbar-brand" href="/">
-                <img src="https://www.logo.wine/a/logo/United_Airlines/United_Airlines-Logo.wine.svg" alt="United Airlines" height="32" class="me-2"> IOCCA Hub
+            <a class="navbar-brand d-flex align-items-center" href="/" style="color: var(--united-blue); font-weight: 600; text-decoration: none;"
+                <img src="https://www.logo.wine/a/logo/United_Airlines/United_Airlines-Logo.wine.svg" alt="United Airlines" height="36" class="me-3" style="filter: none; background: white; padding: 2px;">
+                <span style="font-size: 1.5rem; color: var(--united-blue); font-weight: 700;">IOCCA Hub</span>
             </a>
-            <span class="navbar-text">
+            <span class="navbar-text" style="color: var(--united-blue); font-weight: 500;"
                 Day Simulation - Crew Operations Management
             </span>
         </div>
@@ -156,9 +276,9 @@
                 <div class="card metric-card">
                     <div class="card-body">
                         <h5 class="card-title">
-                            <i class="fas fa-play text-primary"></i>
+                            <i class="fas fa-play" style="color: var(--united-blue);"></i>
                         </h5>
-                        <h3 id="active-simulations">{{ active_simulations }}</h3>
+                        <h3 id="active-simulations" style="color: var(--united-blue); font-weight: 700;">{{ active_simulations }}</h3>
                         <p class="text-muted">Active Simulations</p>
                     </div>
                 </div>
@@ -167,9 +287,9 @@
                 <div class="card metric-card">
                     <div class="card-body">
                         <h5 class="card-title">
-                            <i class="fas fa-calendar-day text-warning"></i>
+                            <i class="fas fa-calendar-day" style="color: var(--united-gold);"></i>
                         </h5>
-                        <h3 id="total-simulations">{{ total_simulations }}</h3>
+                        <h3 id="total-simulations" style="color: var(--united-blue); font-weight: 700;">{{ total_simulations }}</h3>
                         <p class="text-muted">Total Simulations</p>
                     </div>
                 </div>
@@ -178,9 +298,9 @@
                 <div class="card metric-card">
                     <div class="card-body">
                         <h5 class="card-title">
-                            <i class="fas fa-users text-success"></i>
+                            <i class="fas fa-users" style="color: var(--united-light-blue);"></i>
                         </h5>
-                        <h3 id="agents-online">3</h3>
+                        <h3 id="agents-online" style="color: var(--united-blue); font-weight: 700;">3</h3>
                         <p class="text-muted">Agents Online</p>
                     </div>
                 </div>
@@ -189,7 +309,7 @@
                 <div class="card metric-card">
                     <div class="card-body">
                         <h5 class="card-title">
-                            <i class="fas fa-heartbeat text-info"></i>
+                            <i class="fas fa-heartbeat" style="color: var(--united-light-blue);"></i>
                         </h5>
                         <h3 id="system-status">
                             <span class="badge bg-success">Healthy</span>
@@ -212,15 +332,15 @@
                             <p class="text-muted mb-3">Experience a full day of airline operations with realistic crew disruptions, agent reasoning, and automated resolutions.</p>
                         </div>
                         
-                        <button id="start-day-simulation" class="btn btn-primary btn-lg w-100 mb-3">
+                        <button id="start-day-simulation" class="btn btn-lg w-100 mb-3" style="background-color: var(--united-blue); border-color: var(--united-blue); color: white; font-weight: 600;"
                             <i class="fas fa-calendar-day"></i> Start Day Simulation
                         </button>
                         
                         <div class="d-grid gap-2">
-                            <button class="btn btn-outline-primary" onclick="refreshDashboard()">
+                            <button class="btn" onclick="refreshDashboard()" style="border-color: var(--united-blue); color: var(--united-blue);"
                                 <i class="fas fa-sync"></i> Refresh Dashboard
                             </button>
-                            <button class="btn btn-outline-info" onclick="showConfig()">
+                            <button class="btn" onclick="showConfig()" style="border-color: var(--united-light-blue); color: var(--united-light-blue);"
                                 <i class="fas fa-cog"></i> System Config
                             </button>
                         </div>
@@ -233,7 +353,7 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5><i class="fas fa-calendar-day"></i> Day Simulation Status</h5>
-                        <button class="btn btn-sm btn-outline-primary" onclick="loadSimulations()">
+                        <button class="btn btn-sm btn-outline-primary" onclick="loadSimulations()" style="border-color: var(--united-blue); color: var(--united-blue);">
                             <i class="fas fa-sync"></i>
                         </button>
                     </div>
@@ -283,7 +403,11 @@
                             <button type="button" class="btn btn-outline-info" onclick="filterReasoningLogs('agent_chain')">Agent Chains</button>
                             <button type="button" class="btn btn-outline-primary" onclick="filterReasoningLogs('actions')">Actions</button>
                             <button type="button" class="btn btn-outline-success" onclick="filterReasoningLogs('thoughts')">Thoughts</button>
-                            <button type="button" class="btn btn-outline-dark" onclick="clearReasoningLog()">
+                            <button type="button" class="btn btn-outline-warning" onclick="filterReasoningLogs('http_requests')">HTTP</button>
+                            <button type="button" class="btn btn-outline-dark" onclick="showReasoningDetailsPanel()">
+                                <i class="fas fa-eye"></i> Details
+                            </button>
+                            <button type="button" class="btn btn-outline-danger" onclick="clearReasoningLog()">
                                 <i class="fas fa-trash"></i> Clear
                             </button>
                             <button type="button" class="btn btn-outline-primary" onclick="toggleReasoningFullscreen()">
@@ -292,7 +416,7 @@
                         </div>
                     </div>
                     <div class="card-body p-0">
-                        <div id="reasoning-log" class="logs-container">
+                        <div id="reasoning-log" class="reasoning-log-container">
                             <div class="text-center text-muted py-4">
                                 <i class="fas fa-brain"></i>
                                 <p>Model reasoning log will appear here...</p>
@@ -846,39 +970,98 @@
             }
         }
         
-        // Reasoning Log Functions
-        function addReasoningLog(content, type, metadata = {}) {
+        // Enhanced Reasoning Log Functions
+        let reasoningStepCounter = 0;
+        
+        function addReasoningLog(content, type, metadata = {}, confidence = 'medium') {
             const container = document.getElementById('reasoning-log');
             const timestamp = new Date().toLocaleTimeString();
+            const stepId = `reasoning-step-${++reasoningStepCounter}`;
             
-            const reasoningEntry = document.createElement('div');
-            reasoningEntry.className = `reasoning-entry ${type}`;
-            reasoningEntry.setAttribute('data-type', type);
+            // Remove placeholder if it exists
+            const placeholder = container.querySelector('.text-center');
+            if (placeholder) {
+                placeholder.remove();
+            }
             
+            const reasoningCard = document.createElement('div');
+            reasoningCard.className = `reasoning-step-card ${type}`;
+            reasoningCard.setAttribute('data-type', type);
+            reasoningCard.setAttribute('data-step-id', stepId);
+            
+            // Create metadata grid HTML
             let metadataHtml = '';
             if (Object.keys(metadata).length > 0) {
                 metadataHtml = `
-                    <div class="reasoning-metadata">
-                        ${Object.entries(metadata).map(([key, value]) => 
-                            `<strong>${key}:</strong> ${value}`
-                        ).join(' | ')}
+                    <div class="reasoning-metadata-grid">
+                        ${Object.entries(metadata).map(([key, value]) => `
+                            <div class="reasoning-metadata-item">
+                                <strong>${key.replace(/_/g, ' ').toUpperCase()}</strong>
+                                <span>${value}</span>
+                            </div>
+                        `).join('')}
                     </div>
                 `;
             }
             
-            reasoningEntry.innerHTML = `
-                <div class="reasoning-timestamp">${timestamp}</div>
-                <div class="reasoning-type ${type}">${type.replace(/_/g, ' ')}</div>
-                <div class="reasoning-content">${content}</div>
-                ${metadataHtml}
+            // Get appropriate icon for type
+            const typeIcons = {
+                'agent_chain': 'fas fa-link',
+                'action': 'fas fa-play-circle',
+                'observation': 'fas fa-eye',
+                'thought': 'fas fa-brain',
+                'http_request': 'fas fa-globe',
+                'final_answer': 'fas fa-check-circle'
+            };
+            
+            const icon = typeIcons[type] || 'fas fa-question-circle';
+            const displayType = type.replace(/_/g, ' ').toUpperCase();
+            
+            reasoningCard.innerHTML = `
+                <div class="reasoning-step-header" onclick="toggleReasoningStep('${stepId}')">
+                    <div class="reasoning-step-title">
+                        <div>
+                            <i class="${icon}"></i>
+                            <span class="ms-2">${displayType}</span>
+                            <span class="reasoning-step-badge ${type} ms-2">${displayType}</span>
+                        </div>
+                        <div>
+                            <i class="fas fa-chevron-down" id="chevron-${stepId}"></i>
+                        </div>
+                    </div>
+                    <div class="reasoning-step-meta">
+                        <span><i class="fas fa-clock"></i> ${timestamp}</span>
+                        <span class="ms-3"><i class="fas fa-star"></i> ${confidence.toUpperCase()} confidence</span>
+                        ${metadata.flight_id ? `<span class="ms-3"><i class="fas fa-plane"></i> ${metadata.flight_id}</span>` : ''}
+                    </div>
+                </div>
+                <div class="reasoning-step-content" id="content-${stepId}">
+                    <div class="reasoning-content-text">${content}</div>
+                    ${metadataHtml}
+                </div>
             `;
             
-            container.appendChild(reasoningEntry);
+            container.appendChild(reasoningCard);
             container.scrollTop = container.scrollHeight;
             
-            // Keep only last 200 reasoning entries
-            while (container.children.length > 200) {
+            // Keep only last 50 reasoning entries for performance
+            while (container.children.length > 50) {
                 container.removeChild(container.firstChild);
+            }
+        }
+        
+        function toggleReasoningStep(stepId) {
+            const content = document.getElementById(`content-${stepId}`);
+            const chevron = document.getElementById(`chevron-${stepId}`);
+            
+            if (content.classList.contains('expanded')) {
+                content.classList.remove('expanded');
+                chevron.classList.remove('fa-chevron-up');
+                chevron.classList.add('fa-chevron-down');
+            } else {
+                content.classList.add('expanded');
+                chevron.classList.remove('fa-chevron-down');
+                chevron.classList.add('fa-chevron-up');
             }
         }
         
@@ -888,65 +1071,122 @@
             
             // Detect different patterns in the log
             if (logText.includes('Entering new AgentExecutor chain')) {
-                addReasoningLog('Agent chain started', 'agent_chain');
+                addReasoningLog('Agent execution chain has been initiated. Beginning structured problem-solving process.', 'agent_chain', {
+                    'chain_type': 'AgentExecutor',
+                    'status': 'started'
+                }, 'high');
             } else if (logText.includes('Finished chain')) {
-                addReasoningLog('Agent chain completed', 'agent_chain');
+                addReasoningLog('Agent execution chain has completed successfully. All reasoning steps processed.', 'agent_chain', {
+                    'chain_type': 'AgentExecutor',
+                    'status': 'completed'
+                }, 'high');
             } else if (logText.includes('HTTP Request:')) {
                 const match = logText.match(/HTTP Request: (POST|GET|PUT|DELETE) (.*?) "HTTP\/1\.1 (\d+) (\w+)"/);
                 if (match) {
                     const [, method, url, status, statusText] = match;
-                    addReasoningLog(`${method} ${url}`, 'http_request', {
-                        'Status': `${status} ${statusText}`,
-                        'Method': method
-                    });
+                    const confidence = status.startsWith('2') ? 'high' : status.startsWith('4') ? 'low' : 'medium';
+                    addReasoningLog(`API call executed to external service.\n\nEndpoint: ${url}\nMethod: ${method}\nResponse: ${status} ${statusText}`, 'http_request', {
+                        'status_code': `${status} ${statusText}`,
+                        'method': method,
+                        'endpoint': url.split('/').pop(),
+                        'service': url.includes('openai') ? 'OpenAI API' : 'External API'
+                    }, confidence);
                 }
             } else if (logText.includes('Action:')) {
-                const actionMatch = logText.match(/Action: (.*?)[\n\r]/);
-                const inputMatch = logText.match(/Action Input: (.*?)[\n\r]/);
+                const actionMatch = logText.match(/Action: (.*?)(?=\n|$)/);
+                const inputMatch = logText.match(/Action Input: (.*?)(?=\n|$)/s);
                 if (actionMatch) {
-                    addReasoningLog(`${actionMatch[1]}${inputMatch ? `\nInput: ${inputMatch[1]}` : ''}`, 'action');
+                    let actionContent = `Action: ${actionMatch[1]}`;
+                    let metadata = { 'action_type': actionMatch[1] };
+                    
+                    if (inputMatch) {
+                        actionContent += `\n\nInput Parameters:\n${inputMatch[1]}`;
+                        try {
+                            const inputObj = JSON.parse(inputMatch[1]);
+                            if (inputObj.flight_id) metadata.flight_id = inputObj.flight_id;
+                            if (inputObj.location) metadata.location = inputObj.location;
+                        } catch (e) {
+                            // Input is not JSON, that's fine
+                        }
+                    }
+                    
+                    addReasoningLog(actionContent, 'action', metadata, 'high');
                 }
             } else if (logText.includes('Observation:')) {
-                const obsMatch = logText.match(/Observation: (.*?)[\n\r]/);
+                const obsMatch = logText.match(/Observation: (.*?)(?=\n|$)/s);
                 if (obsMatch) {
-                    addReasoningLog(obsMatch[1], 'observation');
+                    let obsText = obsMatch[1];
+                    let metadata = {};
+                    
+                    // Try to parse JSON observation
+                    try {
+                        const obsObj = JSON.parse(obsText);
+                        if (obsObj.message) {
+                            obsText = `Result: ${obsObj.message}\n\nRaw Data:\n${JSON.stringify(obsObj, null, 2)}`;
+                        }
+                        if (obsObj.legal_crew !== undefined) metadata.crew_status = 'analyzed';
+                        if (obsObj.spare_crew) metadata.spare_crew_found = 'yes';
+                    } catch (e) {
+                        // Not JSON, use as-is
+                    }
+                    
+                    addReasoningLog(obsText, 'observation', metadata, 'high');
                 }
             } else if (logText.includes('Thought:')) {
                 const thoughtMatch = logText.match(/Thought:(.*?)(?=Action:|Final Answer:|$)/s);
                 if (thoughtMatch) {
-                    addReasoningLog(thoughtMatch[1].trim(), 'thought');
+                    const thoughtText = thoughtMatch[1].trim();
+                    const metadata = {};
+                    
+                    // Extract key insights from thought
+                    if (thoughtText.includes('crew members')) metadata.focus = 'crew_analysis';
+                    if (thoughtText.includes('illegal') || thoughtText.includes('legal')) metadata.compliance_check = 'performed';
+                    if (thoughtText.includes('rest period')) metadata.rest_analysis = 'performed';
+                    
+                    addReasoningLog(thoughtText, 'thought', metadata, 'medium');
                 }
             } else if (logText.includes('Final Answer:')) {
                 const answerMatch = logText.match(/Final Answer:(.*?)$/s);
                 if (answerMatch) {
-                    addReasoningLog(answerMatch[1].trim(), 'final_answer');
+                    const answerText = answerMatch[1].trim();
+                    const metadata = { 'completion_status': 'success' };
+                    
+                    // Extract key results
+                    if (answerText.includes('HANDOFF_TO_OPS')) metadata.handoff_required = 'yes';
+                    if (answerText.includes('accommodation')) metadata.accommodation_needed = 'yes';
+                    
+                    addReasoningLog(answerText, 'final_answer', metadata, 'high');
                 }
             } else if (logText.includes('timestamp') && logText.includes('level')) {
                 // Handle structured log entries
                 try {
                     const parsed = JSON.parse(logText);
-                    addReasoningLog(parsed.message || 'Log entry', 'http_request', {
-                        'Level': parsed.level,
-                        'Logger': parsed.logger,
-                        'Module': parsed.module
-                    });
+                    const metadata = {
+                        'log_level': parsed.level,
+                        'logger_name': parsed.logger,
+                        'module': parsed.module || 'unknown',
+                        'timestamp': parsed.timestamp
+                    };
+                    
+                    addReasoningLog(parsed.message || 'System log entry', 'http_request', metadata, 'medium');
                 } catch (e) {
                     // Fallback for malformed JSON
-                    addReasoningLog(logText.substring(0, 100) + '...', 'thought');
+                    addReasoningLog(logText.substring(0, 200) + '...', 'thought', {}, 'low');
                 }
             }
         }
         
         function filterReasoningLogs(filterType) {
             const container = document.getElementById('reasoning-log');
-            const entries = container.querySelectorAll('.reasoning-entry');
+            const entries = container.querySelectorAll('.reasoning-step-card');
             
             // Update button states
             const reasoningButtons = document.querySelectorAll('.card:last-child .btn-group button');
             reasoningButtons.forEach(btn => {
                 btn.classList.remove('active');
                 if (btn.textContent.toLowerCase().includes(filterType) || 
-                    (filterType === 'all' && btn.textContent === 'All')) {
+                    (filterType === 'all' && btn.textContent === 'All') ||
+                    (filterType === 'http_requests' && btn.textContent === 'HTTP')) {
                     btn.classList.add('active');
                 }
             });
@@ -962,6 +1202,8 @@
                         entry.style.display = 'block';
                     } else if (filterType === 'thoughts' && entryType === 'thought') {
                         entry.style.display = 'block';
+                    } else if (filterType === 'http_requests' && entryType === 'http_request') {
+                        entry.style.display = 'block';
                     } else {
                         entry.style.display = 'none';
                     }
@@ -971,6 +1213,7 @@
         
         function clearReasoningLog() {
             const container = document.getElementById('reasoning-log');
+            reasoningStepCounter = 0;
             container.innerHTML = `
                 <div class="text-center text-muted py-4">
                     <i class="fas fa-brain"></i>
@@ -982,6 +1225,76 @@
         function toggleReasoningFullscreen() {
             const container = document.getElementById('reasoning-log');
             container.classList.toggle('fullscreen');
+        }
+        
+        function showReasoningDetailsPanel() {
+            const container = document.getElementById('reasoning-log');
+            const entries = container.querySelectorAll('.reasoning-step-card');
+            
+            if (entries.length === 0) {
+                alert('No reasoning steps to show details for.');
+                return;
+            }
+            
+            // Create modal for reasoning details
+            const modal = document.createElement('div');
+            modal.className = 'modal fade';
+            modal.id = 'reasoningDetailsModal';
+            modal.innerHTML = `
+                <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title"><i class="fas fa-brain"></i> Detailed Reasoning Analysis</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="d-flex justify-content-between mb-3">
+                                <div>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="expandAllReasoningSteps()">Expand All</button>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="collapseAllReasoningSteps()">Collapse All</button>
+                                </div>
+                                <div>
+                                    <span class="badge bg-primary">${entries.length} reasoning steps</span>
+                                </div>
+                            </div>
+                            <div id="reasoningDetailsContent" style="max-height: 70vh; overflow-y: auto;">
+                                ${Array.from(entries).map(entry => entry.outerHTML).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            const bsModal = new bootstrap.Modal(modal);
+            bsModal.show();
+            
+            // Clean up when modal is hidden
+            modal.addEventListener('hidden.bs.modal', function() {
+                document.body.removeChild(modal);
+            });
+        }
+        
+        function expandAllReasoningSteps() {
+            const contents = document.querySelectorAll('#reasoningDetailsModal .reasoning-step-content');
+            const chevrons = document.querySelectorAll('#reasoningDetailsModal .fa-chevron-down, #reasoningDetailsModal .fa-chevron-up');
+            
+            contents.forEach(content => content.classList.add('expanded'));
+            chevrons.forEach(chevron => {
+                chevron.classList.remove('fa-chevron-down');
+                chevron.classList.add('fa-chevron-up');
+            });
+        }
+        
+        function collapseAllReasoningSteps() {
+            const contents = document.querySelectorAll('#reasoningDetailsModal .reasoning-step-content');
+            const chevrons = document.querySelectorAll('#reasoningDetailsModal .fa-chevron-down, #reasoningDetailsModal .fa-chevron-up');
+            
+            contents.forEach(content => content.classList.remove('expanded'));
+            chevrons.forEach(chevron => {
+                chevron.classList.remove('fa-chevron-up');
+                chevron.classList.add('fa-chevron-down');
+            });
         }
         
         // Demo function to show sample reasoning data (remove in production)
@@ -999,7 +1312,7 @@
             ];
             
             sampleLogs.forEach((log, index) => {
-                setTimeout(() => parseAndAddReasoningLog(log), index * 500);
+                setTimeout(() => parseAndAddReasoningLog(log), index * 600);
             });
         }
         
