@@ -43,6 +43,25 @@
         .log-entry.resolution { border-left: 4px solid #198754; }
         .log-entry.normal { border-left: 4px solid #6c757d; }
         
+        .log-entry:hover {
+            background-color: #f8f9fa;
+            cursor: pointer;
+        }
+        
+        .agent-response-card {
+            border-left: 4px solid #007bff;
+            transition: all 0.3s ease;
+        }
+        
+        .agent-response-card:hover {
+            box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+            transform: translateY(-1px);
+        }
+        
+        .confidence-high { color: #28a745; }
+        .confidence-medium { color: #ffc107; }
+        .confidence-low { color: #dc3545; }
+        
         .log-timestamp {
             color: #6c757d;
             font-size: 0.75rem;
@@ -178,6 +197,9 @@
                             <button type="button" class="btn btn-outline-warning" onclick="filterLogs('disruptions')">Disruptions</button>
                             <button type="button" class="btn btn-outline-info" onclick="filterLogs('crew_analysis')">Crew Analysis</button>
                             <button type="button" class="btn btn-outline-success" onclick="filterLogs('resolutions')">Resolutions</button>
+                            <button type="button" class="btn btn-outline-dark" onclick="showAgentResponsesPanel()">
+                                <i class="fas fa-robot"></i> Agent Details
+                            </button>
                             <button type="button" class="btn btn-outline-primary" onclick="toggleFullscreen()">
                                 <i class="fas fa-expand"></i>
                             </button>
@@ -306,12 +328,16 @@
                     logType = 'disruption';
                     break;
                 case 'crew_analysis':
-                    logMessage = `👥 CREW ANALYSIS: ${event.flight_id} - ${event.reasoning}`;
+                    logMessage = `👥 CREW ANALYSIS: ${event.flight_id} - ${event.reasoning.substring(0, 100)}...`;
                     logType = 'crew_analysis';
+                    // Store full event data for detailed view
+                    storeEventForDetails(event);
                     break;
                 case 'ops_support':
-                    logMessage = `🏨 OPS SUPPORT: ${event.flight_id} - ${event.reasoning}`;
+                    logMessage = `🏨 OPS SUPPORT: ${event.flight_id} - ${event.reasoning.substring(0, 100)}...`;
                     logType = 'crew_analysis';
+                    // Store full event data for detailed view
+                    storeEventForDetails(event);
                     break;
                 case 'disruption_resolved':
                     logMessage = `✅ RESOLVED: ${event.flight_id} - ${event.resolution}`;
@@ -336,7 +362,7 @@
                     logType = 'info';
             }
             
-            addLog(logMessage, logType);
+            addLog(logMessage, logType, event);
             loadSimulations();
         }
 
@@ -439,7 +465,15 @@
             }
         }
 
-        function addLog(message, type) {
+        // Global storage for detailed event data
+        let detailedEvents = {};
+        
+        function storeEventForDetails(event) {
+            const eventId = `${event.type}_${event.flight_id || 'unknown'}_${event.sim_time || Date.now()}`;
+            detailedEvents[eventId] = event;
+        }
+        
+        function addLog(message, type, eventData = null) {
             const container = document.getElementById('operations-log');
             const timestamp = new Date().toLocaleTimeString();
             
@@ -447,9 +481,20 @@
             logEntry.className = `log-entry ${type}`;
             logEntry.setAttribute('data-type', type);
             
+            let expandButton = '';
+            if (eventData && (eventData.type === 'crew_analysis' || eventData.type === 'ops_support')) {
+                const eventId = `${eventData.type}_${eventData.flight_id || 'unknown'}_${eventData.sim_time || Date.now()}`;
+                expandButton = `<button class="btn btn-sm btn-outline-info ms-2" onclick="showEventDetails('${eventId}')">
+                    <i class="fas fa-expand-alt"></i> Details
+                </button>`;
+            }
+            
             logEntry.innerHTML = `
                 <div class="log-timestamp">${timestamp}</div>
-                <div class="log-content">${message}</div>
+                <div class="log-content">
+                    ${message}
+                    ${expandButton}
+                </div>
             `;
             
             container.appendChild(logEntry);
@@ -532,6 +577,189 @@
             }, 10000); // Refresh every 10 seconds
         }
 
+        // Agent response panel functions
+        function showAgentResponsesPanel() {
+            if (!currentSimulationId) {
+                alert('No active simulation to show agent responses for.');
+                return;
+            }
+            
+            // Create modal for agent responses
+            const modal = document.createElement('div');
+            modal.className = 'modal fade';
+            modal.id = 'agentResponsesModal';
+            modal.innerHTML = `
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Agent Response Analysis</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="d-flex justify-content-between mb-3">
+                                <div>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="loadAgentResponses('crew_assignment')">Crew Responses</button>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="loadAgentResponses('ops_support')">Ops Responses</button>
+                                    <button class="btn btn-sm btn-outline-dark" onclick="loadAgentResponses('')">All Responses</button>
+                                </div>
+                                <div>
+                                    <button class="btn btn-sm btn-success" onclick="exportAgentResponses('json')">Export JSON</button>
+                                    <button class="btn btn-sm btn-info" onclick="exportAgentResponses('csv')">Export CSV</button>
+                                </div>
+                            </div>
+                            <div id="agentResponsesContent">
+                                <div class="text-center text-muted py-4">
+                                    <i class="fas fa-robot fa-2x"></i>
+                                    <p>Loading agent responses...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            const bsModal = new bootstrap.Modal(modal);
+            bsModal.show();
+            
+            // Load all responses by default
+            loadAgentResponses('');
+            
+            // Clean up when modal is hidden
+            modal.addEventListener('hidden.bs.modal', function() {
+                document.body.removeChild(modal);
+            });
+        }
+        
+        async function loadAgentResponses(agentType = '') {
+            if (!currentSimulationId) return;
+            
+            try {
+                const url = `/api/simulation/${currentSimulationId}/agent-responses${agentType ? `?agent_type=${agentType}` : ''}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                const container = document.getElementById('agentResponsesContent');
+                
+                if (data.agent_responses.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-info-circle"></i>
+                            <p>No agent responses found for the selected filter.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = data.agent_responses.map(response => `
+                    <div class="card mb-3">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">
+                                <i class="fas fa-${response.agent_type === 'crew_assignment' ? 'users' : 'hotel'}"></i>
+                                ${response.agent_type === 'crew_assignment' ? 'Crew Assignment' : 'Operations Support'} - ${response.flight_id}
+                                <span class="badge bg-${getConfidenceBadgeColor(response.confidence_level)} ms-2">${response.confidence_level} confidence</span>
+                            </h6>
+                            <small class="text-muted">${new Date(response.timestamp).toLocaleString()}</small>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <h6>Reasoning:</h6>
+                                    <p class="small">${response.reasoning}</p>
+                                </div>
+                                <div class="col-md-4">
+                                    <h6>Analysis Details:</h6>
+                                    <ul class="list-unstyled small">
+                                        ${Object.entries(response.detailed_analysis || {}).map(([key, value]) => 
+                                            `<li><strong>${key.replace(/_/g, ' ')}:</strong> ${Array.isArray(value) ? value.join(', ') : value}</li>`
+                                        ).join('')}
+                                    </ul>
+                                    ${response.handoff_required ? `<div class="alert alert-info small"><strong>Handoff:</strong> ${response.handoff_context}</div>` : ''}
+                                    ${response.booking_confirmed ? `<div class="alert alert-success small"><strong>Booking:</strong> Confirmed</div>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                console.error('Error loading agent responses:', error);
+                document.getElementById('agentResponsesContent').innerHTML = `
+                    <div class="alert alert-danger">
+                        Error loading agent responses: ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        function getConfidenceBadgeColor(level) {
+            switch(level) {
+                case 'high': return 'success';
+                case 'medium': return 'warning';
+                case 'low': return 'danger';
+                default: return 'secondary';
+            }
+        }
+        
+        function showEventDetails(eventId) {
+            const event = detailedEvents[eventId];
+            if (!event) {
+                alert('Event details not found.');
+                return;
+            }
+            
+            // Create detailed event modal
+            const modal = document.createElement('div');
+            modal.className = 'modal fade';
+            modal.innerHTML = `
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Event Details - ${event.flight_id}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <pre class="bg-light p-3 rounded">${JSON.stringify(event, null, 2)}</pre>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            const bsModal = new bootstrap.Modal(modal);
+            bsModal.show();
+            
+            modal.addEventListener('hidden.bs.modal', function() {
+                document.body.removeChild(modal);
+            });
+        }
+        
+        async function exportAgentResponses(format) {
+            if (!currentSimulationId) return;
+            
+            try {
+                const url = `/api/simulation/${currentSimulationId}/agent-responses/export?format=${format}`;
+                const response = await fetch(url);
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const downloadUrl = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = downloadUrl;
+                    a.download = `agent_responses_${currentSimulationId}.${format}`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(downloadUrl);
+                } else {
+                    alert('Error exporting agent responses');
+                }
+            } catch (error) {
+                console.error('Export error:', error);
+                alert('Error exporting agent responses');
+            }
+        }
+        
         // Handle page visibility changes
         document.addEventListener('visibilitychange', function() {
             if (document.hidden) {

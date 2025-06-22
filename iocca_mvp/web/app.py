@@ -71,6 +71,7 @@ web_logger = get_agent_logger("web_interface")
 
 # In-memory storage for simulations
 active_simulations = {}  # Track running day simulations
+simulator_instances = {}  # Track simulator instances for agent response access
 
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
@@ -270,11 +271,20 @@ async def run_day_simulation(simulation_id: str):
         if simulation_id in active_simulations:
             active_simulations[simulation_id]["status"] = "completed"
             active_simulations[simulation_id]["end_time"] = datetime.utcnow().isoformat()
+            # Store final agent responses count
+            active_simulations[simulation_id]["agent_responses_count"] = len(simulator.agent_responses)
         
         completion_message = json.dumps({
             "type": "simulation_complete",
             "simulation_id": simulation_id,
-            "message": "Day simulation completed successfully"
+            "message": "Day simulation completed successfully",
+            "summary": {
+                "total_events": len(active_simulations[simulation_id].get("events", [])),
+                "agent_responses": len(simulator.agent_responses),
+                "crew_responses": len([r for r in simulator.agent_responses if r["agent_type"] == "crew_assignment"]),
+                "ops_responses": len([r for r in simulator.agent_responses if r["agent_type"] == "ops_support"]),
+                "simulation_duration": (datetime.utcnow() - datetime.fromisoformat(active_simulations[simulation_id]["start_time"])).total_seconds()
+            }
         })
         await manager.broadcast(completion_message)
         
@@ -311,6 +321,157 @@ async def list_simulations():
         "total": len(active_simulations),
         "active": len([s for s in active_simulations.values() if s["status"] == "running"])
     }
+
+@app.get("/api/simulation/{simulation_id}/agent-responses")
+async def get_agent_responses(simulation_id: str, agent_type: str = None, flight_id: str = None):
+    """Get detailed agent responses for a simulation"""
+    if simulation_id not in active_simulations:
+        raise HTTPException(status_code=404, detail="Simulation not found")
+    
+    agent_responses = []
+    
+    # First try to get from simulator instance if available
+    if simulation_id in simulator_instances:
+        simulator = simulator_instances[simulation_id]
+        agent_responses = [{
+            "event_id": resp["event_id"],
+            "agent_type": resp["agent_type"],
+            "flight_id": resp["flight_id"],
+            "crew_id": resp.get("crew_id"),
+            "timestamp": resp["timestamp"],
+            "reasoning": resp["full_response"].get("reasoning", ""),
+            "status": resp["full_response"].get("status", "unknown"),
+            "detailed_analysis": resp["analysis"],
+            "response_time_ms": resp["analysis"].get("response_time_ms", 0),
+            "confidence_level": resp["analysis"].get("confidence_level", "medium"),
+            "handoff_required": resp["full_response"].get("handoff_required", False) if resp["agent_type"] == "crew_assignment" else None,
+            "handoff_context": resp["full_response"].get("handoff_context") if resp["agent_type"] == "crew_assignment" else None,
+            "booking_confirmed": resp["full_response"].get("booking_confirmed", False) if resp["agent_type"] == "ops_support" else None,
+            "hotel_details": resp["full_response"].get("hotel_details") if resp["agent_type"] == "ops_support" else None
+        } for resp in simulator.agent_responses]
+    else:
+        # Fallback to extracting from stored events
+        simulation = active_simulations[simulation_id]
+        for event in simulation.get("events", []):
+            if event.get("type") in ["crew_analysis", "ops_support"]:
+                response_data = {
+                    "event_id": f"{event['type']}_{event.get('flight_id', 'unknown')}_{event.get('sim_time', '')}",
+                    "agent_type": "crew_assignment" if event["type"] == "crew_analysis" else "ops_support",
+                    "flight_id": event.get("flight_id"),
+                    "crew_id": event.get("crew_id"),
+                    "timestamp": event.get("sim_time"),
+                    "reasoning": event.get("reasoning", ""),
+                    "status": event.get("status", "unknown"),
+                    "detailed_analysis": event.get("detailed_analysis", {}),
+                    "response_time_ms": event.get("response_time_ms", 0),
+                    "confidence_level": event.get("detailed_analysis", {}).get("confidence_level", "medium")
+                }
+                
+                # Add specific fields based on agent type
+                if event["type"] == "crew_analysis":
+                    response_data.update({
+                        "handoff_required": event.get("handoff_required", False),
+                        "handoff_context": event.get("handoff_context")
+                    })
+                elif event["type"] == "ops_support":
+                    response_data.update({
+                        "booking_confirmed": event.get("booking_confirmed", False),
+                        "hotel_details": event.get("hotel_details")
+                    })
+                
+                agent_responses.append(response_data)
+    
+    # Apply filters
+    if agent_type:
+        agent_responses = [r for r in agent_responses if r["agent_type"] == agent_type]
+    if flight_id:
+        agent_responses = [r for r in agent_responses if r["flight_id"] == flight_id]
+    
+    return {
+        "simulation_id": simulation_id,
+        "agent_responses": agent_responses,
+        "total_responses": len(agent_responses),
+        "filters_applied": {"agent_type": agent_type, "flight_id": flight_id}
+    }
+
+@app.get("/api/simulation/{simulation_id}/events/{event_id}/details")
+async def get_event_details(simulation_id: str, event_id: str):
+    """Get detailed information for a specific event"""
+    if simulation_id not in active_simulations:
+        raise HTTPException(status_code=404, detail="Simulation not found")
+    
+    simulation = active_simulations[simulation_id]
+    
+    # Find the specific event
+    target_event = None
+    for event in simulation.get("events", []):
+        if f"{event['type']}_{event.get('flight_id', 'unknown')}_{event.get('sim_time', '')}" == event_id:
+            target_event = event
+            break
+    
+    if not target_event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    
+    # Return enhanced event details
+    return {
+        "event_id": event_id,
+        "simulation_id": simulation_id,
+        "event_data": target_event,
+        "analysis": target_event.get("detailed_analysis", {}),
+        "context": {
+            "simulation_time": target_event.get("sim_time"),
+            "flight_id": target_event.get("flight_id"),
+            "agent_type": "crew_assignment" if target_event["type"] == "crew_analysis" else "ops_support"
+        }
+    }
+
+@app.get("/api/simulation/{simulation_id}/agent-responses/export")
+async def export_agent_responses(simulation_id: str, format: str = "json"):
+    """Export agent responses in JSON or CSV format"""
+    if simulation_id not in active_simulations:
+        raise HTTPException(status_code=404, detail="Simulation not found")
+    
+    # Get agent responses using the existing endpoint logic
+    response_data = await get_agent_responses(simulation_id)
+    agent_responses = response_data["agent_responses"]
+    
+    if format.lower() == "csv":
+        import io
+        import csv
+        from fastapi.responses import StreamingResponse
+        
+        # Convert to CSV
+        output = io.StringIO()
+        if agent_responses:
+            fieldnames = agent_responses[0].keys()
+            writer = csv.DictWriter(output, fieldnames=fieldnames)
+            writer.writeheader()
+            for response in agent_responses:
+                # Flatten nested objects for CSV
+                flat_response = response.copy()
+                if "detailed_analysis" in flat_response and isinstance(flat_response["detailed_analysis"], dict):
+                    for key, value in flat_response["detailed_analysis"].items():
+                        flat_response[f"analysis_{key}"] = str(value)
+                    del flat_response["detailed_analysis"]
+                writer.writerow(flat_response)
+        
+        output.seek(0)
+        return StreamingResponse(
+            io.BytesIO(output.getvalue().encode()),
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename=agent_responses_{simulation_id}.csv"}
+        )
+    
+    else:  # JSON format
+        from fastapi.responses import JSONResponse
+        return JSONResponse(
+            content={
+                "simulation_id": simulation_id,
+                "export_timestamp": datetime.utcnow().isoformat(),
+                "agent_responses": agent_responses
+            },
+            headers={"Content-Disposition": f"attachment; filename=agent_responses_{simulation_id}.json"}
+        )
 
 async def start_simple_day_simulation(background_tasks: BackgroundTasks):
     """Fallback simple day simulation without LangChain"""

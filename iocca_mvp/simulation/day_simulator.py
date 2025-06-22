@@ -25,6 +25,7 @@ class DaySimulator:
         self.end_time = self.current_time + timedelta(hours=18)  # 6 AM to 12 AM
         self.events = []
         self.disruptions = []
+        self.agent_responses = []  # Store detailed agent response data
         
         # Generate realistic daily schedule
         self.flight_schedule = self._generate_daily_schedule()
@@ -421,14 +422,32 @@ class DaySimulator:
             disruption
         )
         
+        # Extract structured response data
+        crew_analysis = self._extract_crew_analysis_details(crew_response, disruption)
+        
         crew_event = {
             "type": "crew_analysis",
             "flight_id": disruption["flight_id"],
             "agent": "crew_assignment",
             "reasoning": crew_response.get("reasoning", ""),
             "status": crew_response.get("status", "unknown"),
-            "sim_time": self.current_time.isoformat()
+            "sim_time": self.current_time.isoformat(),
+            "detailed_analysis": crew_analysis,
+            "handoff_required": crew_response.get("handoff_required", False),
+            "handoff_context": crew_response.get("handoff_context"),
+            "response_time_ms": crew_analysis.get("response_time_ms", 0)
         }
+        
+        # Store detailed agent response
+        self.agent_responses.append({
+            "event_id": f"crew_{disruption['flight_id']}_{self.current_time.isoformat()}",
+            "agent_type": "crew_assignment",
+            "flight_id": disruption["flight_id"],
+            "timestamp": self.current_time.isoformat(),
+            "full_response": crew_response,
+            "analysis": crew_analysis,
+            "event_data": crew_event
+        })
         
         if callback:
             await callback(crew_event)
@@ -451,6 +470,9 @@ class DaySimulator:
                         handoff_context
                     )
                     
+                    # Extract structured ops response data
+                    ops_analysis = self._extract_ops_analysis_details(ops_response, crew_member, flight)
+                    
                     ops_event = {
                         "type": "ops_support",
                         "flight_id": disruption["flight_id"],
@@ -458,8 +480,24 @@ class DaySimulator:
                         "agent": "ops_support",
                         "reasoning": ops_response.get("reasoning", ""),
                         "status": ops_response.get("status", "unknown"),
-                        "sim_time": self.current_time.isoformat()
+                        "sim_time": self.current_time.isoformat(),
+                        "detailed_analysis": ops_analysis,
+                        "booking_confirmed": ops_response.get("booking_confirmed", False),
+                        "hotel_details": ops_response.get("hotel_details"),
+                        "response_time_ms": ops_analysis.get("response_time_ms", 0)
                     }
+                    
+                    # Store detailed ops agent response
+                    self.agent_responses.append({
+                        "event_id": f"ops_{crew_member['crew_id']}_{self.current_time.isoformat()}",
+                        "agent_type": "ops_support",
+                        "flight_id": disruption["flight_id"],
+                        "crew_id": crew_member["crew_id"],
+                        "timestamp": self.current_time.isoformat(),
+                        "full_response": ops_response,
+                        "analysis": ops_analysis,
+                        "event_data": ops_event
+                    })
                     
                     if callback:
                         await callback(ops_event)
@@ -474,3 +512,101 @@ class DaySimulator:
         
         if callback:
             await callback(resolution_event)
+    
+    def _extract_crew_analysis_details(self, crew_response: Dict[str, Any], disruption: Dict[str, Any]) -> Dict[str, Any]:
+        """Extract structured details from crew assignment analysis"""
+        reasoning = crew_response.get("reasoning", "")
+        
+        # Analyze the reasoning to extract key decisions
+        analysis = {
+            "disruption_type": disruption.get("type", "unknown"),
+            "delay_minutes": disruption.get("delay_minutes", 0),
+            "crew_legality_checked": "legal" in reasoning.lower() or "duty" in reasoning.lower(),
+            "spare_crew_searched": "spare" in reasoning.lower() or "available" in reasoning.lower(),
+            "repositioning_considered": "reposition" in reasoning.lower() or "flight" in reasoning.lower(),
+            "accommodation_needed": "hotel" in reasoning.lower() or "accommodation" in reasoning.lower(),
+            "tools_used": [],
+            "decision_summary": "",
+            "confidence_level": "medium",
+            "response_time_ms": 0  # Would be measured in real implementation
+        }
+        
+        # Extract tool usage patterns
+        if "check_crew_legality" in reasoning:
+            analysis["tools_used"].append("check_crew_legality")
+        if "find_spare_crew" in reasoning:
+            analysis["tools_used"].append("find_spare_crew")
+        if "find_repositioning" in reasoning:
+            analysis["tools_used"].append("find_repositioning")
+        
+        # Extract decision summary (first sentence or key conclusion)
+        lines = reasoning.split('\n')
+        for line in lines:
+            if any(word in line.lower() for word in ["decision", "recommendation", "solution", "resolved"]):
+                analysis["decision_summary"] = line.strip()[:100] + "..." if len(line) > 100 else line.strip()
+                break
+        
+        if not analysis["decision_summary"]:
+            analysis["decision_summary"] = reasoning[:100] + "..." if len(reasoning) > 100 else reasoning
+        
+        # Assess confidence based on response completeness
+        if len(analysis["tools_used"]) >= 2 and analysis["decision_summary"]:
+            analysis["confidence_level"] = "high"
+        elif len(analysis["tools_used"]) == 1:
+            analysis["confidence_level"] = "medium"
+        else:
+            analysis["confidence_level"] = "low"
+        
+        return analysis
+    
+    def _extract_ops_analysis_details(self, ops_response: Dict[str, Any], crew_member: Dict[str, Any], flight: Dict[str, Any]) -> Dict[str, Any]:
+        """Extract structured details from operations support analysis"""
+        reasoning = ops_response.get("reasoning", "")
+        
+        analysis = {
+            "crew_id": crew_member.get("crew_id", "unknown"),
+            "location": flight.get("origin", "unknown"),
+            "support_type": "accommodation",
+            "hotel_availability_checked": "hotel" in reasoning.lower() and "available" in reasoning.lower(),
+            "booking_attempted": "book" in reasoning.lower() or "reservation" in reasoning.lower(),
+            "cost_considered": "rate" in reasoning.lower() or "cost" in reasoning.lower() or "$" in reasoning,
+            "tools_used": [],
+            "booking_details": {},
+            "decision_summary": "",
+            "confidence_level": "medium",
+            "response_time_ms": 0
+        }
+        
+        # Extract tool usage patterns
+        if "check_hotel_availability" in reasoning:
+            analysis["tools_used"].append("check_hotel_availability")
+        if "book_crew_hotel" in reasoning:
+            analysis["tools_used"].append("book_crew_hotel")
+        
+        # Extract booking details if confirmed
+        if ops_response.get("booking_confirmed", False):
+            hotel_details = ops_response.get("hotel_details", {})
+            analysis["booking_details"] = {
+                "confirmed": True,
+                "hotel_info": hotel_details.get("booking_line", "Hotel booking confirmed")
+            }
+        
+        # Extract decision summary
+        lines = reasoning.split('\n')
+        for line in lines:
+            if any(word in line.lower() for word in ["booked", "confirmed", "arranged", "selected"]):
+                analysis["decision_summary"] = line.strip()[:100] + "..." if len(line) > 100 else line.strip()
+                break
+        
+        if not analysis["decision_summary"]:
+            analysis["decision_summary"] = reasoning[:100] + "..." if len(reasoning) > 100 else reasoning
+        
+        # Assess confidence based on booking success and tool usage
+        if analysis["booking_details"].get("confirmed", False) and len(analysis["tools_used"]) >= 2:
+            analysis["confidence_level"] = "high"
+        elif len(analysis["tools_used"]) >= 1:
+            analysis["confidence_level"] = "medium"
+        else:
+            analysis["confidence_level"] = "low"
+        
+        return analysis
