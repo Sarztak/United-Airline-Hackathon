@@ -168,11 +168,19 @@ class CrewAssignmentAgent:
                 else:
                     illegal_crew.append(f"{crew['crew_id']}: {result['reason']}")
             
-            return json.dumps({
-                "legal_crew": legal_crew,
-                "illegal_crew": illegal_crew,
-                "message": f"Legal crew: {legal_crew}. Illegal crew: {illegal_crew}"
-            })
+            # Create human-readable response
+            if not illegal_crew and legal_crew:
+                return f"CREW LEGAL - All crew members ({', '.join(legal_crew)}) are compliant with duty time regulations and cleared to operate this flight."
+            elif illegal_crew and not legal_crew:
+                crew_issues = [issue.split(': ')[1] if ': ' in issue else issue for issue in illegal_crew]
+                crew_ids = [issue.split(': ')[0] if ': ' in issue else issue for issue in illegal_crew]
+                return f"CREW TIMEOUT - {', '.join(crew_ids)} are illegal due to {crew_issues[0]}. No legal crew available, spare crew required."
+            elif illegal_crew and legal_crew:
+                crew_issues = [issue.split(': ')[1] if ': ' in issue else issue for issue in illegal_crew]
+                crew_ids = [issue.split(': ')[0] if ': ' in issue else issue for issue in illegal_crew]
+                return f"PARTIAL CREW TIMEOUT - Legal crew: {', '.join(legal_crew)}. Illegal crew: {', '.join(crew_ids)} ({crew_issues[0]}). Replacement needed for illegal crew."
+            else:
+                return "NO CREW ASSIGNED - Flight requires crew assignment before departure."
             
         except Exception as e:
             return json.dumps({"error": f"Error checking crew legality: {str(e)}"})
@@ -196,12 +204,15 @@ class CrewAssignmentAgent:
         try:
             spare = find_spares(current_flight=None, crew_df=self.crew_roster_df)
             if spare:
-                return json.dumps({
-                    "spare_crew": spare,
-                    "message": f"Found spare crew: {spare['crew_id']} at {spare['base']}"
-                })
+                crew_id = spare['crew_id']
+                role = spare['role'].title()
+                base = spare['base']
+                if base == location:
+                    return f"SPARE CREW FOUND - {role} {crew_id} available at {base}, ready for immediate assignment"
+                else:
+                    return f"SPARE CREW FOUND - {role} {crew_id} at {base}, repositioning required from {base} to {location}"
             else:
-                return json.dumps({"message": "No spare crew available"})
+                return f"NO SPARE CREW - No available crew at {location} or nearby locations. Alternative solutions required."
         except Exception as e:
             return json.dumps({"error": f"Error finding spare crew: {str(e)}"})
     
@@ -231,15 +242,21 @@ class CrewAssignmentAgent:
             )
             
             if options:
-                flight_info = [f"{opt['flight_id']} ({opt['sched_dep']} - {opt['sched_arr']})" for opt in options]
-                return json.dumps({
-                    "repositioning_flights": options,
-                    "message": f"Repositioning options: {', '.join(flight_info)}"
-                })
+                if len(options) == 1:
+                    opt = options[0]
+                    dep_time = opt['sched_dep'].split('T')[1][:5] if 'T' in opt['sched_dep'] else opt['sched_dep']
+                    arr_time = opt['sched_arr'].split('T')[1][:5] if 'T' in opt['sched_arr'] else opt['sched_arr']
+                    seats_status = "seats available" if opt.get('seats_available', True) else "limited availability"
+                    return f"REPOSITIONING AVAILABLE - Flight {opt['flight_id']} from {from_location} to {to_location} departing {dep_time}, arriving {arr_time} with {seats_status}"
+                else:
+                    flight_summaries = []
+                    for opt in options[:3]:  # Show max 3 options
+                        dep_time = opt['sched_dep'].split('T')[1][:5] if 'T' in opt['sched_dep'] else opt['sched_dep']
+                        arr_time = opt['sched_arr'].split('T')[1][:5] if 'T' in opt['sched_arr'] else opt['sched_arr']
+                        flight_summaries.append(f"{opt['flight_id']} ({dep_time}-{arr_time})")
+                    return f"MULTIPLE REPOSITIONING OPTIONS - {from_location} to {to_location}: {', '.join(flight_summaries)}"
             else:
-                return json.dumps({
-                    "message": f"No repositioning flights available from {from_location} to {to_location}"
-                })
+                return f"NO REPOSITIONING AVAILABLE - No flights from {from_location} to {to_location}. Alternative crew sourcing required."
                 
         except Exception as e:
             return json.dumps({"error": f"Error finding repositioning flights: {str(e)}"})

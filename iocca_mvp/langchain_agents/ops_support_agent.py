@@ -118,17 +118,12 @@ class OpsupportAgent:
             result = book_hotel(location, crew_id, self.hotel_inventory_df)
             
             if result["success"]:
-                return json.dumps({
-                    "success": True,
-                    "hotel_name": result["hotel_name"],
-                    "confirmation": result["confirmation"],
-                    "message": f"Hotel booked successfully: {result['hotel_name']} (Confirmation: {result['confirmation']})"
-                })
+                hotel_name = result["hotel_name"]
+                confirmation = result["confirmation"]
+                return f"HOTEL BOOKING CONFIRMED - {hotel_name} for crew {crew_id} at {location}. Confirmation: {confirmation}. Crew accommodation secured."
             else:
-                return json.dumps({
-                    "success": False,
-                    "message": f"Hotel booking failed: {result['failure_reason']}"
-                })
+                reason = result.get('failure_reason', 'Unknown error')
+                return f"HOTEL BOOKING FAILED - Unable to book accommodation for crew {crew_id} at {location}: {reason}. Alternative accommodation required."
                 
         except Exception as e:
             return json.dumps({"error": f"Error booking hotel: {str(e)}"})
@@ -156,20 +151,21 @@ class OpsupportAgent:
             ]
             
             if available_hotels.empty:
-                return json.dumps({"message": f"No hotels available at {location}"})
+                return f"NO HOTEL AVAILABILITY - All crew-rate hotels at {location} are fully booked. Alternate accommodation options needed."
             else:
-                hotel_list = []
-                hotels_data = []
+                hotel_summaries = []
+                total_rooms = 0
                 for _, hotel in available_hotels.iterrows():
-                    hotel_list.append(f"{hotel['name']} ({hotel['available_rooms']} rooms)")
-                    hotels_data.append({
-                        "name": hotel['name'],
-                        "available_rooms": hotel['available_rooms']
-                    })
-                return json.dumps({
-                    "available_hotels": hotels_data,
-                    "message": f"Available hotels at {location}: {', '.join(hotel_list)}"
-                })
+                    rooms = hotel['available_rooms']
+                    rate = hotel.get('crew_rate', 'Unknown')
+                    hotel_summaries.append(f"{hotel['name']} ({rooms} rooms at ${rate}/night)")
+                    total_rooms += rooms
+                
+                if len(hotel_summaries) == 1:
+                    return f"HOTEL AVAILABILITY - {hotel_summaries[0]} at {location}, ready for crew booking"
+                else:
+                    top_hotels = hotel_summaries[:3]  # Show top 3 options
+                    return f"MULTIPLE HOTELS AVAILABLE - {location}: {', '.join(top_hotels)}. Total {total_rooms} rooms available."
                 
         except Exception as e:
             return json.dumps({"error": f"Error checking hotel availability: {str(e)}"})

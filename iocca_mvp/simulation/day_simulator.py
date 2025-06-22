@@ -663,8 +663,9 @@ class DaySimulator:
                         new_content = current_output[last_position:]
                         last_position = len(current_output)
                         
-                        # Parse the new content for agent steps
-                        await self._parse_agent_output(new_content, reasoning_callback)
+                        # Clean ANSI codes and parse the new content for agent steps
+                        cleaned_content = self._strip_ansi_codes(new_content)
+                        await self._parse_agent_output(cleaned_content, reasoning_callback)
                     
                     await asyncio.sleep(0.1)  # Check every 100ms
             
@@ -679,7 +680,8 @@ class DaySimulator:
             
             # Parse any remaining output
             final_output = captured_output.getvalue()
-            await self._parse_agent_output(final_output, reasoning_callback)
+            cleaned_final_output = self._strip_ansi_codes(final_output)
+            await self._parse_agent_output(cleaned_final_output, reasoning_callback)
             
             # Send completion event
             await reasoning_callback({
@@ -719,8 +721,9 @@ class DaySimulator:
                         new_content = current_output[last_position:]
                         last_position = len(current_output)
                         
-                        # Parse the new content for agent steps
-                        await self._parse_agent_output(new_content, reasoning_callback)
+                        # Clean ANSI codes and parse the new content for agent steps
+                        cleaned_content = self._strip_ansi_codes(new_content)
+                        await self._parse_agent_output(cleaned_content, reasoning_callback)
                     
                     await asyncio.sleep(0.1)  # Check every 100ms
             
@@ -735,7 +738,8 @@ class DaySimulator:
             
             # Parse any remaining output
             final_output = captured_output.getvalue()
-            await self._parse_agent_output(final_output, reasoning_callback)
+            cleaned_final_output = self._strip_ansi_codes(final_output)
+            await self._parse_agent_output(cleaned_final_output, reasoning_callback)
             
             # Send completion event
             await reasoning_callback({
@@ -753,7 +757,10 @@ class DaySimulator:
 
     async def _parse_agent_output(self, output: str, reasoning_callback):
         """Parse LangChain agent output and create streaming events"""
-        lines = output.strip().split('\n')
+        # Strip ANSI escape codes from the entire output first
+        cleaned_output = self._strip_ansi_codes(output)
+        lines = cleaned_output.strip().split('\n')
+        last_action = None
         
         for line in lines:
             if not line.strip():
@@ -770,6 +777,7 @@ class DaySimulator:
                 
             elif line.startswith("Action:"):
                 action = line.replace("Action:", "").strip()
+                last_action = action  # Store for use with Action Input
                 await reasoning_callback({
                     "type": "reasoning_step",
                     "step": "action",
@@ -785,9 +793,11 @@ class DaySimulator:
                 
             elif line.startswith("Action Input:"):
                 input_data = line.replace("Action Input:", "").strip()
+                # Convert JSON input to human-readable description
+                readable_input = self._convert_json_input_to_readable(input_data, last_action)
                 await reasoning_callback({
-                    "type": "token",
-                    "content": f"Action Input: {input_data}\n\n",
+                    "type": "token", 
+                    "content": f"{readable_input}\n\n",
                     "stream_id": "agent_stream"
                 })
                 
@@ -834,3 +844,59 @@ class DaySimulator:
                     "content": "Agent execution completed",
                     "stream_id": "agent_stream"
                 })
+    
+    def _convert_json_input_to_readable(self, json_input: str, action_name: str) -> str:
+        """Convert JSON action input to human-readable description"""
+        if not json_input or not action_name:
+            return json_input
+        
+        try:
+            import json
+            data = json.loads(json_input)
+            
+            if action_name == "check_crew_legality":
+                flight_id = data.get("flight_id", "unknown")
+                return f"Checking crew duty time compliance for flight {flight_id}"
+            
+            elif action_name == "find_spare_crew":
+                location = data.get("location", "unknown")
+                return f"Searching for available spare crew at {location}"
+            
+            elif action_name == "find_repositioning":
+                from_loc = data.get("from_location", "unknown")
+                to_loc = data.get("to_location", "unknown")
+                return f"Finding repositioning flights from {from_loc} to {to_loc}"
+            
+            elif action_name == "book_crew_hotel":
+                crew_id = data.get("crew_id", "unknown")
+                location = data.get("location", "unknown")
+                return f"Booking hotel accommodation for crew {crew_id} at {location}"
+            
+            elif action_name == "check_hotel_availability":
+                location = data.get("location", "unknown")
+                return f"Checking hotel availability at {location}"
+            
+            else:
+                # Fallback for unknown actions
+                return f"Action parameters: {json_input}"
+                
+        except (json.JSONDecodeError, AttributeError):
+            # If JSON parsing fails, return original
+            return json_input
+    
+    def _strip_ansi_codes(self, text: str) -> str:
+        """Remove ANSI escape sequences from text"""
+        import re
+        
+        # Remove ANSI escape sequences (comprehensive pattern)
+        ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+        text = ansi_escape.sub('', text)
+        
+        # Remove any remaining bracket sequences like [36;1m, [1;3m, [0m
+        text = re.sub(r'\[[0-9;]*m', '', text)
+        
+        # Remove other common terminal codes
+        text = re.sub(r'\[36;1m\[1;3m', '', text)  # Specific combo seen in output
+        text = re.sub(r'\[0m', '', text)  # Reset codes
+        
+        return text
