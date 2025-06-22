@@ -308,6 +308,65 @@
             color: #155724;
         }
         
+        /* Enhanced Reasoning Formatting */
+        .reasoning-section {
+            margin: 0.75rem 0;
+            padding: 0.5rem;
+            border-left: 3px solid #e9ecef;
+            background: #f8f9fa;
+            border-radius: 0 0.25rem 0.25rem 0;
+        }
+        
+        .reasoning-section.action {
+            border-left-color: #007bff;
+            background: #f0f8ff;
+        }
+        
+        .reasoning-section.observation {
+            border-left-color: #28a745;
+            background: #f0fff4;
+        }
+        
+        .reasoning-section.thought {
+            border-left-color: #ffc107;
+            background: #fffef0;
+        }
+        
+        .reasoning-section.final-answer {
+            border-left-color: #dc3545;
+            background: #fff5f5;
+        }
+        
+        .reasoning-section-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .reasoning-section-content {
+            font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            padding: 0.5rem;
+            background: white;
+            border-radius: 0.25rem;
+            border: 1px solid #e9ecef;
+        }
+        
+        .reasoning-json-content {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.25rem;
+            padding: 0.5rem;
+            overflow-x: auto;
+            font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+            font-size: 0.8rem;
+        }
+        
         .reasoning-confidence-indicator.medium {
             background: #fff3cd;
             color: #856404;
@@ -481,6 +540,7 @@
             loadSimulations();
             startAutoRefresh();
             connectWebSocket();
+            initScrollDetection();
         });
 
         // Start day simulation
@@ -739,10 +799,49 @@
         // Global storage for detailed event data and reasoning streams
         let detailedEvents = {};
         let eventReasoningStreams = {};
+        let userScrolling = false;
+        let scrollTimeout;
         
         function storeEventForDetails(event) {
             const eventId = `${event.type}_${event.flight_id || 'unknown'}_${event.sim_time || Date.now()}`;
             detailedEvents[eventId] = event;
+        }
+        
+        // Smart auto-scroll functions
+        function initScrollDetection() {
+            const container = document.getElementById('operations-log');
+            
+            container.addEventListener('scroll', function() {
+                userScrolling = true;
+                clearTimeout(scrollTimeout);
+                scrollTimeout = setTimeout(() => {
+                    userScrolling = false;
+                }, 2000); // Reset after 2 seconds of no scrolling
+            });
+        }
+        
+        function isAnyReasoningContainerOpen() {
+            const openContainers = document.querySelectorAll('.inline-reasoning-container.active');
+            return openContainers.length > 0;
+        }
+        
+        function smartAutoScroll(container) {
+            // Don't auto-scroll if user is actively scrolling or reading reasoning
+            if (userScrolling || isAnyReasoningContainerOpen()) {
+                return;
+            }
+            
+            // Check if user is near the bottom (within 100px)
+            const isNearBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 100;
+            
+            if (isNearBottom) {
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+        
+        function scrollReasoningContent(contentEl) {
+            // Always scroll reasoning content to bottom
+            contentEl.scrollTop = contentEl.scrollHeight;
         }
         
         function addLog(message, type, eventData = null) {
@@ -801,7 +900,7 @@
             }
             
             container.appendChild(logEntry);
-            container.scrollTop = container.scrollHeight;
+            smartAutoScroll(container);
             
             // Keep only last 100 log entries
             while (container.children.length > 100) {
@@ -943,8 +1042,8 @@
                 }
             }
             
-            // Auto-scroll reasoning content
-            contentEl.scrollTop = contentEl.scrollHeight;
+            // Auto-scroll reasoning content only
+            scrollReasoningContent(contentEl);
         }
 
         function filterLogs(filterType) {
@@ -1203,39 +1302,138 @@
         
         // Highlight important content in reasoning
         function highlightReasoningContent(content) {
+            // Parse content into structured sections
+            const lines = content.split('\n');
+            let sections = [];
+            let currentSection = null;
+            
+            for (let line of lines) {
+                line = line.trim();
+                if (!line) continue;
+                
+                // Detect section headers
+                if (line.startsWith('Action:')) {
+                    if (currentSection) sections.push(currentSection);
+                    currentSection = {
+                        type: 'action',
+                        header: 'Using Tool',
+                        icon: 'fas fa-cog',
+                        content: line.substring(7).trim()
+                    };
+                } else if (line.startsWith('Action Input:')) {
+                    if (currentSection && currentSection.type === 'action') {
+                        const input = line.substring(13).trim();
+                        currentSection.input = input;
+                    }
+                } else if (line.startsWith('Observation:')) {
+                    if (currentSection) sections.push(currentSection);
+                    currentSection = {
+                        type: 'observation',
+                        header: 'Tool Result',
+                        icon: 'fas fa-chart-line',
+                        content: line.substring(12).trim()
+                    };
+                } else if (line.startsWith('Thought:')) {
+                    if (currentSection) sections.push(currentSection);
+                    currentSection = {
+                        type: 'thought',
+                        header: 'Agent Analysis',
+                        icon: 'fas fa-brain',
+                        content: line.substring(8).trim()
+                    };
+                } else if (line.startsWith('Final Answer:')) {
+                    if (currentSection) sections.push(currentSection);
+                    currentSection = {
+                        type: 'final-answer',
+                        header: 'Decision',
+                        icon: 'fas fa-check-circle',
+                        content: line.substring(13).trim()
+                    };
+                } else if (currentSection) {
+                    // Append to current section content
+                    currentSection.content += '\n' + line;
+                }
+            }
+            
+            // Add final section
+            if (currentSection) sections.push(currentSection);
+            
+            // If no structured sections found, fall back to basic highlighting
+            if (sections.length === 0) {
+                return applyBasicHighlighting(content);
+            }
+            
+            // Generate structured HTML
+            let html = '';
+            for (let section of sections) {
+                html += generateSectionHTML(section);
+            }
+            
+            return html;
+        }
+        
+        function applyBasicHighlighting(content) {
             let highlighted = content;
             
-            // Highlight tools
-            highlighted = highlighted.replace(/Action: (\w+)/g, (match, tool) => {
-                return `Action: <span class="reasoning-tool-usage">${tool}</span>`;
-            });
-            
-            // Highlight crew violations
+            // Basic highlighting for unstructured content
+            highlighted = highlighted.replace(/([CS]\d{3})/g, '<span class="badge bg-secondary">$1</span>');
+            highlighted = highlighted.replace(/(UA\d{3,4})/g, '<span class="badge bg-primary">$1</span>');
+            highlighted = highlighted.replace(/HANDOFF_TO_OPS/g, '<span class="reasoning-highlight">HANDOFF_TO_OPS</span>');
             highlighted = highlighted.replace(/(\d+\.?\d*)\s*hours?\s*below\s*minimum/gi, (match, hours) => {
                 return `<span class="reasoning-highlight">${hours} hours below minimum</span>`;
             });
             
-            // Highlight handoff decisions
-            highlighted = highlighted.replace(/HANDOFF_TO_OPS/g, '<span class="reasoning-highlight">HANDOFF_TO_OPS</span>');
+            return `<div class="reasoning-section-content">${highlighted}</div>`;
+        }
+        
+        function generateSectionHTML(section) {
+            let content = section.content;
             
-            // Highlight crew IDs
-            highlighted = highlighted.replace(/([CS]\d{3})/g, '<span class="badge bg-secondary">$1</span>');
+            // Apply highlighting to content
+            content = content.replace(/([CS]\d{3})/g, '<span class="badge bg-secondary">$1</span>');
+            content = content.replace(/(UA\d{3,4})/g, '<span class="badge bg-primary">$1</span>');
+            content = content.replace(/HANDOFF_TO_OPS/g, '<span class="reasoning-highlight">HANDOFF_TO_OPS</span>');
             
-            // Highlight flight IDs
-            highlighted = highlighted.replace(/(UA\d{3,4})/g, '<span class="badge bg-primary">$1</span>');
-            
-            // Add handoff indicator if detected
-            if (highlighted.includes('HANDOFF_TO_OPS')) {
-                const handoffDiv = document.createElement('div');
-                handoffDiv.className = 'reasoning-handoff-indicator';
-                handoffDiv.innerHTML = `
-                    <i class="fas fa-exchange-alt"></i>
-                    <span>Handoff to Operations Support Initiated</span>
-                `;
-                return highlighted + handoffDiv.outerHTML;
+            // Format JSON-like content
+            if (section.input && (section.input.includes('{') || section.input.includes('flight_id'))) {
+                try {
+                    const jsonObj = JSON.parse(section.input);
+                    section.input = JSON.stringify(jsonObj, null, 2);
+                } catch (e) {
+                    // Not valid JSON, keep as-is
+                }
             }
             
-            return highlighted;
+            let html = `
+                <div class="reasoning-section ${section.type}">
+                    <div class="reasoning-section-header">
+                        <i class="${section.icon}"></i>
+                        <span>${section.header}</span>
+                        ${section.type === 'action' ? `<span class="reasoning-tool-usage">${section.content}</span>` : ''}
+                    </div>
+            `;
+            
+            if (section.type === 'action') {
+                if (section.input) {
+                    html += `<div class="reasoning-json-content">${section.input}</div>`;
+                }
+            } else {
+                html += `<div class="reasoning-section-content">${content}</div>`;
+            }
+            
+            html += '</div>';
+            
+            // Add handoff indicator if detected
+            if (content.includes('HANDOFF_TO_OPS')) {
+                html += `
+                    <div class="reasoning-handoff-indicator">
+                        <i class="fas fa-exchange-alt"></i>
+                        <span>Handoff to Operations Support Initiated</span>
+                    </div>
+                `;
+            }
+            
+            return html;
         }
         
 
