@@ -361,10 +361,25 @@
             background: #f8f9fa;
             border: 1px solid #dee2e6;
             border-radius: 0.25rem;
-            padding: 0.5rem;
+            margin: 0.5rem 0;
             overflow-x: auto;
+        }
+        
+        .reasoning-json-content pre {
+            margin: 0;
+            padding: 0.75rem;
+            background: transparent;
+            border: none;
             font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
             font-size: 0.8rem;
+            line-height: 1.4;
+        }
+        
+        .reasoning-json-content code {
+            background: transparent;
+            color: inherit;
+            padding: 0;
+            font-size: inherit;
         }
         
         .reasoning-confidence-indicator.medium {
@@ -1358,7 +1373,10 @@
             // Add final section
             if (currentSection) sections.push(currentSection);
             
-            // If no structured sections found, fall back to basic highlighting
+            // Clean up and consolidate sections
+            sections = cleanupSections(sections);
+            
+            // If no valid sections found, fall back to basic highlighting
             if (sections.length === 0) {
                 return applyBasicHighlighting(content);
             }
@@ -1370,6 +1388,58 @@
             }
             
             return html;
+        }
+        
+        function cleanupSections(sections) {
+            let cleaned = [];
+            let lastThoughtSection = null;
+            
+            for (let section of sections) {
+                // Skip empty sections
+                if (!hasValidContent(section)) {
+                    continue;
+                }
+                
+                // Merge consecutive thought sections
+                if (section.type === 'thought') {
+                    if (lastThoughtSection) {
+                        lastThoughtSection.content += '\n\n' + section.content;
+                        continue;
+                    } else {
+                        lastThoughtSection = section;
+                        cleaned.push(section);
+                    }
+                } else {
+                    lastThoughtSection = null;
+                    cleaned.push(section);
+                }
+            }
+            
+            return cleaned;
+        }
+        
+        function hasValidContent(section) {
+            if (!section || !section.content) return false;
+            
+            const content = section.content.trim();
+            
+            // Check for empty or minimal content
+            if (content.length < 3) return false;
+            
+            // Check for placeholder or error content
+            const invalidPatterns = [
+                /^undefined$/i,
+                /^null$/i,
+                /^\s*$/, 
+                /^error/i,
+                /^failed/i
+            ];
+            
+            for (let pattern of invalidPatterns) {
+                if (pattern.test(content)) return false;
+            }
+            
+            return true;
         }
         
         function applyBasicHighlighting(content) {
@@ -1394,16 +1464,6 @@
             content = content.replace(/(UA\d{3,4})/g, '<span class="badge bg-primary">$1</span>');
             content = content.replace(/HANDOFF_TO_OPS/g, '<span class="reasoning-highlight">HANDOFF_TO_OPS</span>');
             
-            // Format JSON-like content
-            if (section.input && (section.input.includes('{') || section.input.includes('flight_id'))) {
-                try {
-                    const jsonObj = JSON.parse(section.input);
-                    section.input = JSON.stringify(jsonObj, null, 2);
-                } catch (e) {
-                    // Not valid JSON, keep as-is
-                }
-            }
-            
             let html = `
                 <div class="reasoning-section ${section.type}">
                     <div class="reasoning-section-header">
@@ -1414,11 +1474,18 @@
             `;
             
             if (section.type === 'action') {
-                if (section.input) {
-                    html += `<div class="reasoning-json-content">${section.input}</div>`;
+                // Handle action input formatting
+                if (section.input && section.input.trim()) {
+                    html += formatJSONContent(section.input);
                 }
+            } else if (section.type === 'observation') {
+                // Format observation content (often JSON)
+                html += formatJSONContent(content);
             } else {
-                html += `<div class="reasoning-section-content">${content}</div>`;
+                // Regular content for thoughts and final answers
+                if (content && content.trim()) {
+                    html += `<div class="reasoning-section-content">${content}</div>`;
+                }
             }
             
             html += '</div>';
@@ -1434,6 +1501,37 @@
             }
             
             return html;
+        }
+        
+        function formatJSONContent(content) {
+            if (!content || !content.trim()) {
+                return '';
+            }
+            
+            content = content.trim();
+            
+            // Try to format as JSON if it looks like JSON
+            if (content.startsWith('{') || content.startsWith('[')) {
+                try {
+                    const jsonObj = JSON.parse(content);
+                    const formattedJSON = JSON.stringify(jsonObj, null, 2);
+                    return `<div class="reasoning-json-content"><pre><code>${highlightJSON(formattedJSON)}</code></pre></div>`;
+                } catch (e) {
+                    // Not valid JSON, treat as regular content
+                }
+            }
+            
+            // Regular content formatting
+            return `<div class="reasoning-section-content">${content}</div>`;
+        }
+        
+        function highlightJSON(json) {
+            // Simple JSON syntax highlighting
+            return json
+                .replace(/(".*?")\s*:/g, '<span style="color: #0066cc; font-weight: bold;">$1</span>:')
+                .replace(/:\s*(".*?")/g, ': <span style="color: #006600;">$1</span>')
+                .replace(/:\s*(true|false|null)/g, ': <span style="color: #cc6600; font-weight: bold;">$1</span>')
+                .replace(/:\s*(\d+\.?\d*)/g, ': <span style="color: #cc0066;">$1</span>');
         }
         
 
