@@ -66,25 +66,46 @@ class CrewAssignmentAgent:
         self.duty_rules = duty_rules
     
     def handle_disruption(self, flight_id: str, disruption_info: Dict[str, Any]) -> Dict[str, Any]:
-        """Handle a flight disruption"""
+        """Handle a flight disruption with structured reasoning"""
         logger.log_agent_start("crew_assignment_disruption", {
             "flight_id": flight_id,
             "disruption": disruption_info
         })
         
-        input_text = f"""
-        Flight Disruption Analysis Needed:
+        # Get flight details for better context
+        flight_details = self._get_flight_details(flight_id)
         
+        input_text = f"""
+        You are a Crew Assignment Agent responsible for analyzing flight disruptions and coordinating crew reassignments.
+        
+        FLIGHT DISRUPTION ANALYSIS:
         Flight ID: {flight_id}
-        Disruption: {disruption_info.get('description', 'Unknown disruption')}
-        New Departure Time: {disruption_info.get('new_departure', 'TBD')}
+        Route: {flight_details.get('origin', 'Unknown')} → {flight_details.get('destination', 'Unknown')}
+        Original Departure: {flight_details.get('scheduled_dep', 'Unknown')}
+        Disruption Type: {disruption_info.get('type', 'Unknown')}
+        Disruption Description: {disruption_info.get('description', 'Unknown disruption')}
         Delay Duration: {disruption_info.get('delay_minutes', 0)} minutes
         
-        Please analyze crew assignment implications and provide recommendations.
+        REQUIRED ANALYSIS STEPS:
+        1. Check current crew duty time legality using check_crew_legality tool
+        2. If crew timeout detected, find spare crew at origin using find_spare_crew tool
+        3. If no local spare crew, search for repositioning options using find_repositioning tool
+        4. Assess crew accommodation needs for timeout situations
+        
+        HANDOFF REQUIREMENTS:
+        - If crew needs accommodation, provide detailed context for Operations Support Agent
+        - Include: affected crew IDs, location, reason for accommodation, timeline
+        - Use format: "HANDOFF_TO_OPS: [crew_ids] at [location] need accommodation due to [reason]"
+        
+        RESPONSE FORMAT:
+        Provide step-by-step reasoning, tool usage results, and clear handoff instructions if needed.
         """
         
         try:
             result = self.agent_executor.invoke({"input": input_text})
+            
+            # Extract handoff information from response
+            handoff_info = self._extract_handoff_info(result["output"])
             
             # Extract structured response
             response = {
@@ -92,7 +113,9 @@ class CrewAssignmentAgent:
                 "agent": "crew_assignment",
                 "reasoning": result["output"],
                 "timestamp": datetime.utcnow().isoformat(),
-                "status": "completed"
+                "status": "completed",
+                "handoff_required": handoff_info["required"],
+                "handoff_context": handoff_info["context"] if handoff_info["required"] else None
             }
             
             logger.log_agent_complete("crew_assignment_disruption", response, 0)
@@ -220,3 +243,35 @@ class CrewAssignmentAgent:
                 
         except Exception as e:
             return json.dumps({"error": f"Error finding repositioning flights: {str(e)}"})
+    
+    def _get_flight_details(self, flight_id: str) -> Dict[str, Any]:
+        """Get flight details from schedule"""
+        if self.flight_schedule_df is None:
+            return {}
+        
+        try:
+            flight_row = self.flight_schedule_df[self.flight_schedule_df["flight_id"] == flight_id]
+            if not flight_row.empty:
+                return flight_row.iloc[0].to_dict()
+        except Exception as e:
+            logger.error(f"Error getting flight details: {e}")
+        
+        return {}
+    
+    def _extract_handoff_info(self, agent_output: str) -> Dict[str, Any]:
+        """Extract handoff information from agent response"""
+        handoff_required = "HANDOFF_TO_OPS:" in agent_output
+        context = None
+        
+        if handoff_required:
+            # Extract handoff context
+            lines = agent_output.split('\n')
+            for line in lines:
+                if "HANDOFF_TO_OPS:" in line:
+                    context = line.replace("HANDOFF_TO_OPS:", "").strip()
+                    break
+        
+        return {
+            "required": handoff_required,
+            "context": context
+        }

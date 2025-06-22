@@ -433,18 +433,22 @@ class DaySimulator:
         if callback:
             await callback(crew_event)
         
-        # If crew needs support, trigger Ops Support Agent
-        if "hotel" in crew_response.get("reasoning", "").lower() or "accommodation" in crew_response.get("reasoning", "").lower():
+        # If crew needs support, trigger Ops Support Agent with handoff context
+        if crew_response.get("handoff_required", False) or "hotel" in crew_response.get("reasoning", "").lower() or "accommodation" in crew_response.get("reasoning", "").lower():
             # Find affected crew
             flight = next((f for f in self.flight_schedule if f["flight_id"] == disruption["flight_id"]), None)
             if flight:
                 affected_crew = [c for c in self.crew_roster if c["assigned_flight_id"] == disruption["flight_id"]]
                 
                 for crew_member in affected_crew[:1]:  # Handle first crew member as example
+                    # Use handoff context if available
+                    handoff_context = crew_response.get("handoff_context", f"Crew {crew_member['crew_id']} requires accommodation due to duty time violation")
+                    
                     ops_response = self.ops_agent.handle_crew_support(
                         crew_member["crew_id"],
                         flight["origin"],
-                        "accommodation"
+                        "accommodation",
+                        handoff_context
                     )
                     
                     ops_event = {

@@ -52,7 +52,7 @@ class OpsupportAgent:
         """Set the operational context for the agent"""
         self.hotel_inventory_df = pd.DataFrame(hotel_inventory)
     
-    def handle_crew_support(self, crew_id: str, location: str, support_type: str = "accommodation") -> Dict[str, Any]:
+    def handle_crew_support(self, crew_id: str, location: str, support_type: str = "accommodation", handoff_context: str = None) -> Dict[str, Any]:
         """Handle crew support request"""
         logger.log_agent_start("ops_support_request", {
             "crew_id": crew_id,
@@ -173,3 +173,21 @@ class OpsupportAgent:
                 
         except Exception as e:
             return json.dumps({"error": f"Error checking hotel availability: {str(e)}"})
+    
+    def _extract_booking_details(self, agent_output: str) -> Dict[str, Any]:
+        """Extract booking confirmation details from agent response"""
+        confirmed = "booked successfully" in agent_output.lower() or "confirmation" in agent_output.lower()
+        hotel_info = {}
+        
+        if confirmed:
+            # Try to extract hotel name and confirmation from output
+            lines = agent_output.split('\n')
+            for line in lines:
+                if "hotel" in line.lower() and ("booked" in line.lower() or "confirmation" in line.lower()):
+                    hotel_info["booking_line"] = line.strip()
+                    break
+        
+        return {
+            "confirmed": confirmed,
+            "hotel_info": hotel_info if confirmed else None
+        }
