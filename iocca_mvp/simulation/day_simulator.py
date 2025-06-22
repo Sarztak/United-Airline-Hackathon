@@ -416,10 +416,23 @@ class DaySimulator:
         if callback:
             await callback(disruption_event)
         
-        # Crew Assignment Agent analyzes the situation
-        crew_response = self.crew_agent.handle_disruption(
+        # Create agent reasoning callback to stream to web UI
+        async def agent_reasoning_callback(reasoning_event):
+            """Stream agent reasoning steps to the web UI"""
+            if callback:
+                llm_event = {
+                    "type": "llm_crew_reasoning",
+                    "flight_id": disruption["flight_id"],
+                    "sim_time": self.current_time.isoformat(),
+                    "llm_event": reasoning_event
+                }
+                await callback(llm_event)
+        
+        # Crew Assignment Agent analyzes the situation with streaming
+        crew_response = await self._run_crew_agent_with_streaming(
             disruption["flight_id"], 
-            disruption
+            disruption,
+            agent_reasoning_callback
         )
         
         # Extract structured response data
@@ -463,11 +476,25 @@ class DaySimulator:
                     # Use handoff context if available
                     handoff_context = crew_response.get("handoff_context", f"Crew {crew_member['crew_id']} requires accommodation due to duty time violation")
                     
-                    ops_response = self.ops_agent.handle_crew_support(
+                    # Create ops reasoning callback
+                    async def ops_reasoning_callback(reasoning_event):
+                        """Stream ops agent reasoning steps to the web UI"""
+                        if callback:
+                            llm_event = {
+                                "type": "llm_ops_reasoning",
+                                "flight_id": disruption["flight_id"],
+                                "crew_ids": [crew_member["crew_id"]],
+                                "sim_time": self.current_time.isoformat(),
+                                "llm_event": reasoning_event
+                            }
+                            await callback(llm_event)
+                    
+                    ops_response = await self._run_ops_agent_with_streaming(
                         crew_member["crew_id"],
                         flight["origin"],
                         "accommodation",
-                        handoff_context
+                        handoff_context,
+                        ops_reasoning_callback
                     )
                     
                     # Extract structured ops response data
@@ -610,3 +637,200 @@ class DaySimulator:
             analysis["confidence_level"] = "low"
         
         return analysis
+
+    async def _run_crew_agent_with_streaming(self, flight_id: str, disruption: Dict[str, Any], reasoning_callback):
+        """Run crew agent with reasoning streaming"""
+        import io
+        import sys
+        import re
+        import asyncio
+        
+        # Capture the agent's verbose output
+        old_stdout = sys.stdout
+        captured_output = io.StringIO()
+        
+        try:
+            # Redirect stdout to capture LangChain's verbose output
+            sys.stdout = captured_output
+            
+            # Parse reasoning steps in real-time using a separate task
+            async def parse_and_stream():
+                """Parse captured output and stream reasoning steps"""
+                last_position = 0
+                while True:
+                    current_output = captured_output.getvalue()
+                    if len(current_output) > last_position:
+                        new_content = current_output[last_position:]
+                        last_position = len(current_output)
+                        
+                        # Parse the new content for agent steps
+                        await self._parse_agent_output(new_content, reasoning_callback)
+                    
+                    await asyncio.sleep(0.1)  # Check every 100ms
+            
+            # Start the parsing task
+            parsing_task = asyncio.create_task(parse_and_stream())
+            
+            # Run the actual agent
+            crew_response = self.crew_agent.handle_disruption(flight_id, disruption)
+            
+            # Cancel the parsing task
+            parsing_task.cancel()
+            
+            # Parse any remaining output
+            final_output = captured_output.getvalue()
+            await self._parse_agent_output(final_output, reasoning_callback)
+            
+            # Send completion event
+            await reasoning_callback({
+                "type": "reasoning_complete",
+                "content": "Crew analysis completed",
+                "decision": crew_response.get("reasoning", "")[:100] + "..." if len(crew_response.get("reasoning", "")) > 100 else crew_response.get("reasoning", ""),
+                "stream_id": "crew_stream"
+            })
+            
+            return crew_response
+            
+        finally:
+            # Restore stdout
+            sys.stdout = old_stdout
+
+    async def _run_ops_agent_with_streaming(self, crew_id: str, location: str, support_type: str, context: str, reasoning_callback):
+        """Run ops agent with reasoning streaming"""
+        import io
+        import sys
+        import asyncio
+        
+        # Capture the agent's verbose output
+        old_stdout = sys.stdout
+        captured_output = io.StringIO()
+        
+        try:
+            # Redirect stdout to capture LangChain's verbose output
+            sys.stdout = captured_output
+            
+            # Parse reasoning steps in real-time
+            async def parse_and_stream():
+                """Parse captured output and stream reasoning steps"""
+                last_position = 0
+                while True:
+                    current_output = captured_output.getvalue()
+                    if len(current_output) > last_position:
+                        new_content = current_output[last_position:]
+                        last_position = len(current_output)
+                        
+                        # Parse the new content for agent steps
+                        await self._parse_agent_output(new_content, reasoning_callback)
+                    
+                    await asyncio.sleep(0.1)  # Check every 100ms
+            
+            # Start the parsing task
+            parsing_task = asyncio.create_task(parse_and_stream())
+            
+            # Run the actual agent
+            ops_response = self.ops_agent.handle_crew_support(crew_id, location, support_type, context)
+            
+            # Cancel the parsing task
+            parsing_task.cancel()
+            
+            # Parse any remaining output
+            final_output = captured_output.getvalue()
+            await self._parse_agent_output(final_output, reasoning_callback)
+            
+            # Send completion event
+            await reasoning_callback({
+                "type": "reasoning_complete",
+                "content": "Operations support analysis completed",
+                "decision": ops_response.get("reasoning", "")[:100] + "..." if len(ops_response.get("reasoning", "")) > 100 else ops_response.get("reasoning", ""),
+                "stream_id": "ops_stream"
+            })
+            
+            return ops_response
+            
+        finally:
+            # Restore stdout
+            sys.stdout = old_stdout
+
+    async def _parse_agent_output(self, output: str, reasoning_callback):
+        """Parse LangChain agent output and create streaming events"""
+        lines = output.strip().split('\n')
+        
+        for line in lines:
+            if not line.strip():
+                continue
+                
+            # Parse different types of agent reasoning
+            if "Entering new AgentExecutor chain" in line:
+                await reasoning_callback({
+                    "type": "reasoning_step",
+                    "step": "chain_start",
+                    "content": "Agent execution chain initiated",
+                    "stream_id": "agent_stream"
+                })
+                
+            elif line.startswith("Action:"):
+                action = line.replace("Action:", "").strip()
+                await reasoning_callback({
+                    "type": "reasoning_step",
+                    "step": "action",
+                    "content": f"Using tool: {action}",
+                    "stream_id": "agent_stream"
+                })
+                # Also send as tokens
+                await reasoning_callback({
+                    "type": "token",
+                    "content": f"Action: {action}\n\n",
+                    "stream_id": "agent_stream"
+                })
+                
+            elif line.startswith("Action Input:"):
+                input_data = line.replace("Action Input:", "").strip()
+                await reasoning_callback({
+                    "type": "token",
+                    "content": f"Action Input: {input_data}\n\n",
+                    "stream_id": "agent_stream"
+                })
+                
+            elif line.startswith("Observation:"):
+                observation = line.replace("Observation:", "").strip()
+                await reasoning_callback({
+                    "type": "token",
+                    "content": f"Observation: {observation}\n\n",
+                    "stream_id": "agent_stream"
+                })
+                
+            elif line.startswith("Thought:"):
+                thought = line.replace("Thought:", "").strip()
+                await reasoning_callback({
+                    "type": "reasoning_step",
+                    "step": "thought",
+                    "content": "Agent is thinking...",
+                    "stream_id": "agent_stream"
+                })
+                await reasoning_callback({
+                    "type": "token",
+                    "content": f"Thought: {thought}\n\n",
+                    "stream_id": "agent_stream"
+                })
+                
+            elif line.startswith("Final Answer:"):
+                answer = line.replace("Final Answer:", "").strip()
+                await reasoning_callback({
+                    "type": "reasoning_step",
+                    "step": "final_answer",
+                    "content": "Reaching final decision...",
+                    "stream_id": "agent_stream"
+                })
+                await reasoning_callback({
+                    "type": "token",
+                    "content": f"Final Answer: {answer}\n\n",
+                    "stream_id": "agent_stream"
+                })
+                
+            elif "Finished chain" in line:
+                await reasoning_callback({
+                    "type": "reasoning_step",
+                    "step": "chain_complete",
+                    "content": "Agent execution completed",
+                    "stream_id": "agent_stream"
+                })

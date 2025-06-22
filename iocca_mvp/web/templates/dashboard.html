@@ -54,6 +54,7 @@
             padding: 0.5rem 1rem;
             border-bottom: 1px solid #e9ecef;
             margin: 0;
+            position: relative;
         }
         
         .log-entry.disruption { border-left: 4px solid #dc3545; }
@@ -64,6 +65,75 @@
         .log-entry:hover {
             background-color: #f8f9fa;
             cursor: pointer;
+        }
+        
+        /* Inline Reasoning Display */
+        .inline-reasoning-container {
+            margin: 0.5rem 0 0.5rem 2rem;
+            padding: 1rem;
+            background: #ffffff;
+            border: 2px solid var(--united-blue);
+            border-radius: 0.5rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 78, 158, 0.1);
+            display: none;
+        }
+        
+        .inline-reasoning-container.active {
+            display: block;
+            animation: slideDown 0.3s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .inline-reasoning-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .inline-reasoning-content {
+            font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: #333;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .reasoning-expand-btn {
+            background: var(--united-light-blue);
+            color: white;
+            border: none;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .reasoning-expand-btn:hover {
+            background: var(--united-blue);
+            transform: translateY(-1px);
+        }
+        
+        .reasoning-expand-btn.active {
+            background: var(--united-blue);
         }
         
         .agent-response-card {
@@ -139,131 +209,135 @@
             border-color: var(--united-dark-blue);
         }
         
-        /* Enhanced Reasoning Log Styles */
-        .reasoning-log-container {
-            height: 70vh;
-            overflow-y: auto;
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-        }
-        
-        .reasoning-log-container.fullscreen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 9999;
-            background: white;
-            border: none;
-        }
-        
-        .reasoning-step-card {
-            margin: 0.5rem;
-            border: 1px solid #e9ecef;
-            border-radius: 0.5rem;
-            background: white;
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-            transition: all 0.3s ease;
-        }
-        
-        .reasoning-step-card:hover {
-            box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
-            transform: translateY(-1px);
-        }
-        
-        .reasoning-step-card.agent_chain { border-left: 4px solid var(--united-blue); }
-        .reasoning-step-card.action { border-left: 4px solid #28a745; }
-        .reasoning-step-card.observation { border-left: 4px solid #ffc107; }
-        .reasoning-step-card.thought { border-left: 4px solid #6f42c1; }
-        .reasoning-step-card.http_request { border-left: 4px solid #fd7e14; }
-        .reasoning-step-card.final_answer { border-left: 4px solid #198754; }
-        
-        .reasoning-step-header {
-            padding: 0.75rem 1rem;
-            border-bottom: 1px solid #e9ecef;
-            background-color: #f8f9fa;
-            cursor: pointer;
-        }
-        
-        .reasoning-step-title {
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        
-        .reasoning-step-badge {
+        /* Operations Event Badges (replaces confidence for operations) */
+        .ops-event-badge {
             display: inline-block;
-            padding: 0.25rem 0.5rem;
+            padding: 0.125rem 0.5rem;
             border-radius: 0.25rem;
-            font-size: 0.75rem;
+            font-size: 0.6rem;
             font-weight: 600;
             text-transform: uppercase;
+            margin-left: 0.5rem;
         }
         
-        .reasoning-step-badge.agent_chain { background-color: var(--united-blue); color: white; }
-        .reasoning-step-badge.action { background-color: #28a745; color: white; }
-        .reasoning-step-badge.observation { background-color: #ffc107; color: black; }
-        .reasoning-step-badge.thought { background-color: #6f42c1; color: white; }
-        .reasoning-step-badge.http_request { background-color: #fd7e14; color: white; }
-        .reasoning-step-badge.final_answer { background-color: #198754; color: white; }
-        
-        .reasoning-step-meta {
-            font-size: 0.75rem;
-            color: #6c757d;
-            margin-top: 0.25rem;
+        .ops-event-badge.success {
+            background-color: #198754;
+            color: white;
         }
         
-        .reasoning-step-content {
-            padding: 1rem;
-            display: none;
+        .ops-event-badge.warning {
+            background-color: #ffc107;
+            color: black;
         }
         
-        .reasoning-step-content.expanded {
-            display: block;
+        .ops-event-badge.error {
+            background-color: #dc3545;
+            color: white;
         }
         
-        .reasoning-content-text {
-            font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
-            font-size: 0.85rem;
-            line-height: 1.4;
-            white-space: pre-wrap;
-            background-color: #f8f9fa;
-            padding: 0.75rem;
-            border-radius: 0.25rem;
-            border: 1px solid #e9ecef;
+        .ops-event-badge.info {
+            background-color: var(--united-light-blue);
+            color: white;
         }
         
-        .reasoning-metadata-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 0.5rem;
-            margin-top: 0.75rem;
-            padding-top: 0.75rem;
-            border-top: 1px solid #e9ecef;
-        }
-        
-        .reasoning-metadata-item {
-            font-size: 0.75rem;
-        }
-        
-        .reasoning-metadata-item strong {
+        /* Inline Reasoning Stream Styles */
+        .reasoning-stream-title {
+            font-weight: 700;
             color: var(--united-blue);
-            display: block;
-            margin-bottom: 0.125rem;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
+        
+        .reasoning-step-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            background: var(--united-light-gray);
+            border-radius: 0.25rem;
+            font-weight: 600;
+            color: var(--united-blue);
+        }
+        
+        .reasoning-highlight {
+            background-color: #ffffcc;
+            padding: 0.125rem 0.25rem;
+            border-radius: 0.125rem;
+            font-weight: 600;
+        }
+        
+        .reasoning-tool-usage {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: var(--united-light-blue);
+            color: white;
+            border-radius: 0.25rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin: 0 0.25rem;
+        }
+        
+        .reasoning-handoff-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 0.5rem;
+            margin: 0.5rem 0;
+            font-weight: 600;
+            color: #856404;
+        }
+        
+        .reasoning-confidence-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .reasoning-confidence-indicator.high {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .reasoning-confidence-indicator.medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .reasoning-confidence-indicator.low {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .reasoning-typing-indicator {
+            display: inline-block;
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light" style="background-color: #ffffff; border-bottom: 3px solid var(--united-blue); box-shadow: 0 2px 4px rgba(0,78,158,0.1);"
+    <nav class="navbar navbar-expand-lg navbar-light" style="background-color: #ffffff; border-bottom: 3px solid var(--united-blue); box-shadow: 0 2px 4px rgba(0,78,158,0.1);">
         <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="/" style="color: var(--united-blue); font-weight: 600; text-decoration: none;"
-                <img src="https://www.logo.wine/a/logo/United_Airlines/United_Airlines-Logo.wine.svg" alt="United Airlines" height="36" class="me-3" style="filter: none; background: white; padding: 2px;">
+            <a class="navbar-brand d-flex align-items-center" href="/" style="color: var(--united-blue); font-weight: 600; text-decoration: none;">
+                <img src="https://www.logo.wine/a/logo/United_Airlines/United_Airlines-Logo.wine.svg" alt="United Airlines" height="36" class="me-3" style="filter: none; background: white; padding: 2px; border-radius: 4px;">
                 <span style="font-size: 1.5rem; color: var(--united-blue); font-weight: 700;">IOCCA Hub</span>
             </a>
-            <span class="navbar-text" style="color: var(--united-blue); font-weight: 500;"
+            <span class="navbar-text" style="color: var(--united-blue); font-weight: 500;">
                 Day Simulation - Crew Operations Management
             </span>
         </div>
@@ -322,34 +396,30 @@
 
         <div class="row">
             <!-- Control Panel -->
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="card">
                     <div class="card-header">
                         <h5><i class="fas fa-control"></i> Control Panel</h5>
                     </div>
                     <div class="card-body">
-                        <div class="mb-3">
-                            <p class="text-muted mb-3">Experience a full day of airline operations with realistic crew disruptions, agent reasoning, and automated resolutions.</p>
-                        </div>
-                        
                         <button id="start-day-simulation" class="btn btn-lg w-100 mb-3" style="background-color: var(--united-blue); border-color: var(--united-blue); color: white; font-weight: 600;"
                             <i class="fas fa-calendar-day"></i> Start Day Simulation
                         </button>
                         
                         <div class="d-grid gap-2">
-                            <button class="btn" onclick="refreshDashboard()" style="border-color: var(--united-blue); color: var(--united-blue);"
-                                <i class="fas fa-sync"></i> Refresh Dashboard
+                            <button class="btn btn-sm" onclick="refreshDashboard()" style="border-color: var(--united-blue); color: var(--united-blue);"
+                                <i class="fas fa-sync"></i> Refresh
                             </button>
-                            <button class="btn" onclick="showConfig()" style="border-color: var(--united-light-blue); color: var(--united-light-blue);"
-                                <i class="fas fa-cog"></i> System Config
+                            <button class="btn btn-sm" onclick="showConfig()" style="border-color: var(--united-light-blue); color: var(--united-light-blue);"
+                                <i class="fas fa-cog"></i> Config
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Simulation Status -->
-            <div class="col-md-8">
+            <!-- Simulation Status and Operations Log -->
+            <div class="col-md-9">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5><i class="fas fa-calendar-day"></i> Day Simulation Status</h5>
@@ -394,36 +464,6 @@
                     </div>
                 </div>
 
-                <!-- Model Reasoning Log -->
-                <div class="card mt-3">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5><i class="fas fa-brain"></i> Model Reasoning Log</h5>
-                        <div class="btn-group btn-group-sm" role="group">
-                            <button type="button" class="btn btn-outline-secondary active" onclick="filterReasoningLogs('all')">All</button>
-                            <button type="button" class="btn btn-outline-info" onclick="filterReasoningLogs('agent_chain')">Agent Chains</button>
-                            <button type="button" class="btn btn-outline-primary" onclick="filterReasoningLogs('actions')">Actions</button>
-                            <button type="button" class="btn btn-outline-success" onclick="filterReasoningLogs('thoughts')">Thoughts</button>
-                            <button type="button" class="btn btn-outline-warning" onclick="filterReasoningLogs('http_requests')">HTTP</button>
-                            <button type="button" class="btn btn-outline-dark" onclick="showReasoningDetailsPanel()">
-                                <i class="fas fa-eye"></i> Details
-                            </button>
-                            <button type="button" class="btn btn-outline-danger" onclick="clearReasoningLog()">
-                                <i class="fas fa-trash"></i> Clear
-                            </button>
-                            <button type="button" class="btn btn-outline-primary" onclick="toggleReasoningFullscreen()">
-                                <i class="fas fa-expand"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="card-body p-0">
-                        <div id="reasoning-log" class="reasoning-log-container">
-                            <div class="text-center text-muted py-4">
-                                <i class="fas fa-brain"></i>
-                                <p>Model reasoning log will appear here...</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -519,10 +559,13 @@
         }
 
         // Handle simulation events
+        let disruptionLogIds = {}; // Map flight IDs to log IDs for reasoning updates
+        
         function handleSimulationEvent(data) {
             const event = data.event;
             let logMessage = '';
             let logType = 'info';
+            let logId = null;
             
             switch (event.type) {
                 case 'time_update':
@@ -536,6 +579,13 @@
                 case 'disruption_detected':
                     logMessage = `<i class="fas fa-exclamation-triangle text-warning"></i> DISRUPTION: ${event.flight_id} - ${event.description}`;
                     logType = 'disruption';
+                    // Store the log ID for this disruption so we can add reasoning to it later
+                    logId = addLog(logMessage, logType, event);
+                    if (event.flight_id) {
+                        disruptionLogIds[event.flight_id] = logId;
+                    }
+                    loadSimulations();
+                    return; // Return early since addLog was already called
                     break;
                 case 'crew_analysis':
                     logMessage = `<i class="fas fa-users text-info"></i> CREW ANALYSIS: ${event.flight_id} - ${event.reasoning.substring(0, 100)}...`;
@@ -554,18 +604,29 @@
                     logType = 'resolution';
                     break;
                 case 'llm_crew_reasoning':
-                    if (event.llm_event && event.llm_event.type === 'token') {
-                        return;
-                    }
-                    logMessage = `<i class="fas fa-robot text-info"></i> CREW LLM: ${event.flight_id} - Live reasoning in progress`;
-                    logType = 'crew_analysis';
-                    break;
                 case 'llm_ops_reasoning':
-                    if (event.llm_event && event.llm_event.type === 'token') {
-                        return;
+                    // Handle LLM streaming events
+                    if (event.llm_event && event.flight_id && disruptionLogIds[event.flight_id]) {
+                        const logId = disruptionLogIds[event.flight_id];
+                        const llmEvent = event.llm_event;
+                        const agentType = event.type === 'llm_crew_reasoning' ? 'crew_assignment' : 'ops_support';
+                        
+                        console.log(`Received ${event.type} for flight ${event.flight_id}, logId: ${logId}`, llmEvent);
+                        
+                        // Add agent type to the event
+                        llmEvent.agentType = agentType;
+                        
+                        // Auto-show reasoning container if it's not visible yet
+                        const reasoningContainer = document.getElementById(`reasoning-${logId}`);
+                        if (reasoningContainer && !reasoningContainer.classList.contains('active')) {
+                            // Auto-expand the reasoning section when streaming starts
+                            toggleInlineReasoning(logId);
+                        }
+                        
+                        // Update the inline reasoning display
+                        updateInlineReasoning(logId, llmEvent.stream_id || 'unknown', llmEvent);
                     }
-                    logMessage = `<i class="fas fa-robot text-primary"></i> OPS LLM: ${event.flight_id} - Live reasoning in progress`;
-                    logType = 'crew_analysis';
+                    return; // Don't add a separate log entry
                     break;
                 default:
                     logMessage = `<i class="fas fa-clipboard-list"></i> ${event.type}: ${JSON.stringify(event)}`;
@@ -675,8 +736,9 @@
             }
         }
 
-        // Global storage for detailed event data
+        // Global storage for detailed event data and reasoning streams
         let detailedEvents = {};
+        let eventReasoningStreams = {};
         
         function storeEventForDetails(event) {
             const eventId = `${event.type}_${event.flight_id || 'unknown'}_${event.sim_time || Date.now()}`;
@@ -691,21 +753,52 @@
             logEntry.className = `log-entry ${type}`;
             logEntry.setAttribute('data-type', type);
             
-            let expandButton = '';
-            if (eventData && (eventData.type === 'crew_analysis' || eventData.type === 'ops_support')) {
-                const eventId = `${eventData.type}_${eventData.flight_id || 'unknown'}_${eventData.sim_time || Date.now()}`;
-                expandButton = `<button class="btn btn-sm btn-outline-info ms-2" onclick="showEventDetails('${eventId}')">
-                    <i class="fas fa-expand-alt"></i> Details
-                </button>`;
+            // Generate unique ID for this log entry
+            const logId = `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            logEntry.id = logId;
+            
+            // Determine event category for visual styling
+            let eventCategory = 'info';
+            if (type === 'success' || message.includes('completed') || message.includes('departed on time')) {
+                eventCategory = 'success';
+            } else if (type === 'warning' || message.includes('disconnected') || message.includes('DISRUPTION')) {
+                eventCategory = 'warning';
+            } else if (type === 'error' || message.includes('Error') || message.includes('failed')) {
+                eventCategory = 'error';
             }
             
+            // Check if this is a disruption that will have reasoning
+            let showReasoningBtn = '';
+            if (type === 'disruption' && eventData && eventData.flight_id) {
+                showReasoningBtn = `<button class="reasoning-expand-btn" onclick="toggleInlineReasoning('${logId}')">
+                    <i class="fas fa-brain"></i> Show AI Reasoning
+                </button>`;
+                // Store the event data for later reasoning display
+                eventReasoningStreams[logId] = {
+                    flightId: eventData.flight_id,
+                    eventData: eventData,
+                    reasoningStarted: false
+                };
+            }
+            
+            // Add event category indicator
+            const categoryBadge = `<span class="ops-event-badge ${eventCategory}">${eventCategory.toUpperCase()}</span>`;
+            
             logEntry.innerHTML = `
-                <div class="log-timestamp">${timestamp}</div>
+                <div class="log-timestamp">${timestamp} ${categoryBadge}</div>
                 <div class="log-content">
                     ${message}
-                    ${expandButton}
+                    ${showReasoningBtn}
                 </div>
             `;
+            
+            // Add reasoning container placeholder
+            if (showReasoningBtn) {
+                const reasoningContainer = document.createElement('div');
+                reasoningContainer.className = 'inline-reasoning-container';
+                reasoningContainer.id = `reasoning-${logId}`;
+                logEntry.appendChild(reasoningContainer);
+            }
             
             container.appendChild(logEntry);
             container.scrollTop = container.scrollHeight;
@@ -714,6 +807,144 @@
             while (container.children.length > 100) {
                 container.removeChild(container.firstChild);
             }
+            
+            return logId;
+        }
+        
+        function toggleInlineReasoning(logId) {
+            const reasoningContainer = document.getElementById(`reasoning-${logId}`);
+            const button = document.querySelector(`#${logId} .reasoning-expand-btn`);
+            
+            console.log(`toggleInlineReasoning called for logId: ${logId}`);
+            
+            if (!reasoningContainer) {
+                console.error(`Reasoning container not found for logId: ${logId}`);
+                return;
+            }
+            
+            if (reasoningContainer.classList.contains('active')) {
+                reasoningContainer.classList.remove('active');
+                if (button) {
+                    button.innerHTML = '<i class="fas fa-brain"></i> Show AI Reasoning';
+                    button.classList.remove('active');
+                }
+            } else {
+                reasoningContainer.classList.add('active');
+                if (button) {
+                    button.innerHTML = '<i class="fas fa-brain"></i> Hide AI Reasoning';
+                    button.classList.add('active');
+                }
+                
+                // If reasoning hasn't started yet, show placeholder
+                if (!eventReasoningStreams[logId] || !eventReasoningStreams[logId].reasoningStarted) {
+                    console.log(`Showing placeholder for logId: ${logId}`);
+                    reasoningContainer.innerHTML = `
+                        <div class="inline-reasoning-header">
+                            <div class="reasoning-stream-title">
+                                <i class="fas fa-brain"></i>
+                                <span>AI Agent Reasoning</span>
+                                <span class="badge bg-warning">Waiting for agent response...</span>
+                            </div>
+                        </div>
+                        <div class="inline-reasoning-content">
+                            <div class="text-center text-muted py-3">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                <p class="mt-2">Waiting for AI agents to analyze the disruption...</p>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+        }
+        
+        function updateInlineReasoning(logId, streamId, event) {
+            const reasoningContainer = document.getElementById(`reasoning-${logId}`);
+            if (!reasoningContainer) {
+                console.error(`Reasoning container not found for logId: ${logId}`);
+                return;
+            }
+            
+            // Make sure we have the event tracking data
+            if (!eventReasoningStreams[logId]) {
+                console.error(`No event stream tracking for logId: ${logId}`);
+                return;
+            }
+            
+            // Initialize reasoning display if first update
+            if (!eventReasoningStreams[logId].reasoningStarted) {
+                eventReasoningStreams[logId].reasoningStarted = true;
+                eventReasoningStreams[logId].streamId = streamId;
+                eventReasoningStreams[logId].content = '';
+                
+                const agentType = event.agentType || 'unknown';
+                const agentIcon = agentType === 'crew_assignment' ? 'fa-users' : 'fa-headset';
+                const agentName = agentType === 'crew_assignment' ? 'Crew Assignment Agent' : 'Operations Support Agent';
+                
+                console.log(`Initializing reasoning display for ${agentName}, streamId: ${streamId}`);
+                
+                reasoningContainer.innerHTML = `
+                    <div class="inline-reasoning-header">
+                        <div class="reasoning-stream-title">
+                            <i class="fas ${agentIcon}"></i>
+                            <span>${agentName}</span>
+                            <span class="reasoning-confidence-indicator medium">
+                                <i class="fas fa-brain"></i> Analyzing...
+                            </span>
+                        </div>
+                        <span class="reasoning-typing-indicator">▊</span>
+                    </div>
+                    <div class="inline-reasoning-content" id="reasoning-content-${logId}"></div>
+                `;
+            }
+            
+            const contentEl = document.getElementById(`reasoning-content-${logId}`);
+            if (!contentEl) {
+                console.error(`Content element not found for reasoning-content-${logId}`);
+                return;
+            }
+            
+            console.log(`Processing event type: ${event.type} for logId: ${logId}`);
+            
+            if (event.type === 'reasoning_step') {
+                // Add step indicator
+                const stepDiv = document.createElement('div');
+                stepDiv.className = 'reasoning-step-indicator';
+                stepDiv.innerHTML = `<i class="fas fa-chevron-right"></i> ${event.content}`;
+                contentEl.appendChild(stepDiv);
+                
+            } else if (event.type === 'token') {
+                // Add token to content
+                eventReasoningStreams[logId].content += event.content;
+                
+                // Parse and highlight content
+                const highlightedContent = highlightReasoningContent(eventReasoningStreams[logId].content);
+                contentEl.innerHTML = highlightedContent;
+                
+            } else if (event.type === 'reasoning_complete') {
+                // Update header to show complete
+                const header = reasoningContainer.querySelector('.inline-reasoning-header');
+                if (header) {
+                    const statusSpan = header.querySelector('.reasoning-confidence-indicator');
+                    if (statusSpan) {
+                        statusSpan.className = 'reasoning-confidence-indicator high';
+                        statusSpan.innerHTML = '<i class="fas fa-check-circle"></i> Analysis Complete';
+                    }
+                    // Remove typing indicator
+                    const typingIndicator = header.querySelector('.reasoning-typing-indicator');
+                    if (typingIndicator) typingIndicator.remove();
+                }
+                
+                // Add decision summary if available
+                if (event.decision) {
+                    const summaryDiv = document.createElement('div');
+                    summaryDiv.className = 'alert alert-success mt-3';
+                    summaryDiv.innerHTML = `<strong>Decision:</strong> ${event.decision}`;
+                    contentEl.appendChild(summaryDiv);
+                }
+            }
+            
+            // Auto-scroll reasoning content
+            contentEl.scrollTop = contentEl.scrollHeight;
         }
 
         function filterLogs(filterType) {
@@ -970,379 +1201,44 @@
             }
         }
         
-        // Enhanced Reasoning Log Functions
-        let reasoningStepCounter = 0;
-        
-        function addReasoningLog(content, type, metadata = {}, confidence = 'medium') {
-            const container = document.getElementById('reasoning-log');
-            const timestamp = new Date().toLocaleTimeString();
-            const stepId = `reasoning-step-${++reasoningStepCounter}`;
+        // Highlight important content in reasoning
+        function highlightReasoningContent(content) {
+            let highlighted = content;
             
-            // Remove placeholder if it exists
-            const placeholder = container.querySelector('.text-center');
-            if (placeholder) {
-                placeholder.remove();
-            }
+            // Highlight tools
+            highlighted = highlighted.replace(/Action: (\w+)/g, (match, tool) => {
+                return `Action: <span class="reasoning-tool-usage">${tool}</span>`;
+            });
             
-            const reasoningCard = document.createElement('div');
-            reasoningCard.className = `reasoning-step-card ${type}`;
-            reasoningCard.setAttribute('data-type', type);
-            reasoningCard.setAttribute('data-step-id', stepId);
+            // Highlight crew violations
+            highlighted = highlighted.replace(/(\d+\.?\d*)\s*hours?\s*below\s*minimum/gi, (match, hours) => {
+                return `<span class="reasoning-highlight">${hours} hours below minimum</span>`;
+            });
             
-            // Create metadata grid HTML
-            let metadataHtml = '';
-            if (Object.keys(metadata).length > 0) {
-                metadataHtml = `
-                    <div class="reasoning-metadata-grid">
-                        ${Object.entries(metadata).map(([key, value]) => `
-                            <div class="reasoning-metadata-item">
-                                <strong>${key.replace(/_/g, ' ').toUpperCase()}</strong>
-                                <span>${value}</span>
-                            </div>
-                        `).join('')}
-                    </div>
+            // Highlight handoff decisions
+            highlighted = highlighted.replace(/HANDOFF_TO_OPS/g, '<span class="reasoning-highlight">HANDOFF_TO_OPS</span>');
+            
+            // Highlight crew IDs
+            highlighted = highlighted.replace(/([CS]\d{3})/g, '<span class="badge bg-secondary">$1</span>');
+            
+            // Highlight flight IDs
+            highlighted = highlighted.replace(/(UA\d{3,4})/g, '<span class="badge bg-primary">$1</span>');
+            
+            // Add handoff indicator if detected
+            if (highlighted.includes('HANDOFF_TO_OPS')) {
+                const handoffDiv = document.createElement('div');
+                handoffDiv.className = 'reasoning-handoff-indicator';
+                handoffDiv.innerHTML = `
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>Handoff to Operations Support Initiated</span>
                 `;
+                return highlighted + handoffDiv.outerHTML;
             }
             
-            // Get appropriate icon for type
-            const typeIcons = {
-                'agent_chain': 'fas fa-link',
-                'action': 'fas fa-play-circle',
-                'observation': 'fas fa-eye',
-                'thought': 'fas fa-brain',
-                'http_request': 'fas fa-globe',
-                'final_answer': 'fas fa-check-circle'
-            };
-            
-            const icon = typeIcons[type] || 'fas fa-question-circle';
-            const displayType = type.replace(/_/g, ' ').toUpperCase();
-            
-            reasoningCard.innerHTML = `
-                <div class="reasoning-step-header" onclick="toggleReasoningStep('${stepId}')">
-                    <div class="reasoning-step-title">
-                        <div>
-                            <i class="${icon}"></i>
-                            <span class="ms-2">${displayType}</span>
-                            <span class="reasoning-step-badge ${type} ms-2">${displayType}</span>
-                        </div>
-                        <div>
-                            <i class="fas fa-chevron-down" id="chevron-${stepId}"></i>
-                        </div>
-                    </div>
-                    <div class="reasoning-step-meta">
-                        <span><i class="fas fa-clock"></i> ${timestamp}</span>
-                        <span class="ms-3"><i class="fas fa-star"></i> ${confidence.toUpperCase()} confidence</span>
-                        ${metadata.flight_id ? `<span class="ms-3"><i class="fas fa-plane"></i> ${metadata.flight_id}</span>` : ''}
-                    </div>
-                </div>
-                <div class="reasoning-step-content" id="content-${stepId}">
-                    <div class="reasoning-content-text">${content}</div>
-                    ${metadataHtml}
-                </div>
-            `;
-            
-            container.appendChild(reasoningCard);
-            container.scrollTop = container.scrollHeight;
-            
-            // Keep only last 50 reasoning entries for performance
-            while (container.children.length > 50) {
-                container.removeChild(container.firstChild);
-            }
+            return highlighted;
         }
         
-        function toggleReasoningStep(stepId) {
-            const content = document.getElementById(`content-${stepId}`);
-            const chevron = document.getElementById(`chevron-${stepId}`);
-            
-            if (content.classList.contains('expanded')) {
-                content.classList.remove('expanded');
-                chevron.classList.remove('fa-chevron-up');
-                chevron.classList.add('fa-chevron-down');
-            } else {
-                content.classList.add('expanded');
-                chevron.classList.remove('fa-chevron-down');
-                chevron.classList.add('fa-chevron-up');
-            }
-        }
-        
-        function parseAndAddReasoningLog(logData) {
-            // Parse different types of log entries based on the example provided
-            const logText = typeof logData === 'string' ? logData : JSON.stringify(logData);
-            
-            // Detect different patterns in the log
-            if (logText.includes('Entering new AgentExecutor chain')) {
-                addReasoningLog('Agent execution chain has been initiated. Beginning structured problem-solving process.', 'agent_chain', {
-                    'chain_type': 'AgentExecutor',
-                    'status': 'started'
-                }, 'high');
-            } else if (logText.includes('Finished chain')) {
-                addReasoningLog('Agent execution chain has completed successfully. All reasoning steps processed.', 'agent_chain', {
-                    'chain_type': 'AgentExecutor',
-                    'status': 'completed'
-                }, 'high');
-            } else if (logText.includes('HTTP Request:')) {
-                const match = logText.match(/HTTP Request: (POST|GET|PUT|DELETE) (.*?) "HTTP\/1\.1 (\d+) (\w+)"/);
-                if (match) {
-                    const [, method, url, status, statusText] = match;
-                    const confidence = status.startsWith('2') ? 'high' : status.startsWith('4') ? 'low' : 'medium';
-                    addReasoningLog(`API call executed to external service.\n\nEndpoint: ${url}\nMethod: ${method}\nResponse: ${status} ${statusText}`, 'http_request', {
-                        'status_code': `${status} ${statusText}`,
-                        'method': method,
-                        'endpoint': url.split('/').pop(),
-                        'service': url.includes('openai') ? 'OpenAI API' : 'External API'
-                    }, confidence);
-                }
-            } else if (logText.includes('Action:')) {
-                const actionMatch = logText.match(/Action: (.*?)(?=\n|$)/);
-                const inputMatch = logText.match(/Action Input: (.*?)(?=\n|$)/s);
-                if (actionMatch) {
-                    let actionContent = `Action: ${actionMatch[1]}`;
-                    let metadata = { 'action_type': actionMatch[1] };
-                    
-                    if (inputMatch) {
-                        actionContent += `\n\nInput Parameters:\n${inputMatch[1]}`;
-                        try {
-                            const inputObj = JSON.parse(inputMatch[1]);
-                            if (inputObj.flight_id) metadata.flight_id = inputObj.flight_id;
-                            if (inputObj.location) metadata.location = inputObj.location;
-                        } catch (e) {
-                            // Input is not JSON, that's fine
-                        }
-                    }
-                    
-                    addReasoningLog(actionContent, 'action', metadata, 'high');
-                }
-            } else if (logText.includes('Observation:')) {
-                const obsMatch = logText.match(/Observation: (.*?)(?=\n|$)/s);
-                if (obsMatch) {
-                    let obsText = obsMatch[1];
-                    let metadata = {};
-                    
-                    // Try to parse JSON observation
-                    try {
-                        const obsObj = JSON.parse(obsText);
-                        if (obsObj.message) {
-                            obsText = `Result: ${obsObj.message}\n\nRaw Data:\n${JSON.stringify(obsObj, null, 2)}`;
-                        }
-                        if (obsObj.legal_crew !== undefined) metadata.crew_status = 'analyzed';
-                        if (obsObj.spare_crew) metadata.spare_crew_found = 'yes';
-                    } catch (e) {
-                        // Not JSON, use as-is
-                    }
-                    
-                    addReasoningLog(obsText, 'observation', metadata, 'high');
-                }
-            } else if (logText.includes('Thought:')) {
-                const thoughtMatch = logText.match(/Thought:(.*?)(?=Action:|Final Answer:|$)/s);
-                if (thoughtMatch) {
-                    const thoughtText = thoughtMatch[1].trim();
-                    const metadata = {};
-                    
-                    // Extract key insights from thought
-                    if (thoughtText.includes('crew members')) metadata.focus = 'crew_analysis';
-                    if (thoughtText.includes('illegal') || thoughtText.includes('legal')) metadata.compliance_check = 'performed';
-                    if (thoughtText.includes('rest period')) metadata.rest_analysis = 'performed';
-                    
-                    addReasoningLog(thoughtText, 'thought', metadata, 'medium');
-                }
-            } else if (logText.includes('Final Answer:')) {
-                const answerMatch = logText.match(/Final Answer:(.*?)$/s);
-                if (answerMatch) {
-                    const answerText = answerMatch[1].trim();
-                    const metadata = { 'completion_status': 'success' };
-                    
-                    // Extract key results
-                    if (answerText.includes('HANDOFF_TO_OPS')) metadata.handoff_required = 'yes';
-                    if (answerText.includes('accommodation')) metadata.accommodation_needed = 'yes';
-                    
-                    addReasoningLog(answerText, 'final_answer', metadata, 'high');
-                }
-            } else if (logText.includes('timestamp') && logText.includes('level')) {
-                // Handle structured log entries
-                try {
-                    const parsed = JSON.parse(logText);
-                    const metadata = {
-                        'log_level': parsed.level,
-                        'logger_name': parsed.logger,
-                        'module': parsed.module || 'unknown',
-                        'timestamp': parsed.timestamp
-                    };
-                    
-                    addReasoningLog(parsed.message || 'System log entry', 'http_request', metadata, 'medium');
-                } catch (e) {
-                    // Fallback for malformed JSON
-                    addReasoningLog(logText.substring(0, 200) + '...', 'thought', {}, 'low');
-                }
-            }
-        }
-        
-        function filterReasoningLogs(filterType) {
-            const container = document.getElementById('reasoning-log');
-            const entries = container.querySelectorAll('.reasoning-step-card');
-            
-            // Update button states
-            const reasoningButtons = document.querySelectorAll('.card:last-child .btn-group button');
-            reasoningButtons.forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.textContent.toLowerCase().includes(filterType) || 
-                    (filterType === 'all' && btn.textContent === 'All') ||
-                    (filterType === 'http_requests' && btn.textContent === 'HTTP')) {
-                    btn.classList.add('active');
-                }
-            });
-            
-            entries.forEach(entry => {
-                if (filterType === 'all') {
-                    entry.style.display = 'block';
-                } else {
-                    const entryType = entry.getAttribute('data-type');
-                    if (filterType === 'agent_chain' && entryType === 'agent_chain') {
-                        entry.style.display = 'block';
-                    } else if (filterType === 'actions' && entryType === 'action') {
-                        entry.style.display = 'block';
-                    } else if (filterType === 'thoughts' && entryType === 'thought') {
-                        entry.style.display = 'block';
-                    } else if (filterType === 'http_requests' && entryType === 'http_request') {
-                        entry.style.display = 'block';
-                    } else {
-                        entry.style.display = 'none';
-                    }
-                }
-            });
-        }
-        
-        function clearReasoningLog() {
-            const container = document.getElementById('reasoning-log');
-            reasoningStepCounter = 0;
-            container.innerHTML = `
-                <div class="text-center text-muted py-4">
-                    <i class="fas fa-brain"></i>
-                    <p>Model reasoning log will appear here...</p>
-                </div>
-            `;
-        }
-        
-        function toggleReasoningFullscreen() {
-            const container = document.getElementById('reasoning-log');
-            container.classList.toggle('fullscreen');
-        }
-        
-        function showReasoningDetailsPanel() {
-            const container = document.getElementById('reasoning-log');
-            const entries = container.querySelectorAll('.reasoning-step-card');
-            
-            if (entries.length === 0) {
-                alert('No reasoning steps to show details for.');
-                return;
-            }
-            
-            // Create modal for reasoning details
-            const modal = document.createElement('div');
-            modal.className = 'modal fade';
-            modal.id = 'reasoningDetailsModal';
-            modal.innerHTML = `
-                <div class="modal-dialog modal-xl">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title"><i class="fas fa-brain"></i> Detailed Reasoning Analysis</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="d-flex justify-content-between mb-3">
-                                <div>
-                                    <button class="btn btn-sm btn-outline-primary" onclick="expandAllReasoningSteps()">Expand All</button>
-                                    <button class="btn btn-sm btn-outline-secondary" onclick="collapseAllReasoningSteps()">Collapse All</button>
-                                </div>
-                                <div>
-                                    <span class="badge bg-primary">${entries.length} reasoning steps</span>
-                                </div>
-                            </div>
-                            <div id="reasoningDetailsContent" style="max-height: 70vh; overflow-y: auto;">
-                                ${Array.from(entries).map(entry => entry.outerHTML).join('')}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            document.body.appendChild(modal);
-            const bsModal = new bootstrap.Modal(modal);
-            bsModal.show();
-            
-            // Clean up when modal is hidden
-            modal.addEventListener('hidden.bs.modal', function() {
-                document.body.removeChild(modal);
-            });
-        }
-        
-        function expandAllReasoningSteps() {
-            const contents = document.querySelectorAll('#reasoningDetailsModal .reasoning-step-content');
-            const chevrons = document.querySelectorAll('#reasoningDetailsModal .fa-chevron-down, #reasoningDetailsModal .fa-chevron-up');
-            
-            contents.forEach(content => content.classList.add('expanded'));
-            chevrons.forEach(chevron => {
-                chevron.classList.remove('fa-chevron-down');
-                chevron.classList.add('fa-chevron-up');
-            });
-        }
-        
-        function collapseAllReasoningSteps() {
-            const contents = document.querySelectorAll('#reasoningDetailsModal .reasoning-step-content');
-            const chevrons = document.querySelectorAll('#reasoningDetailsModal .fa-chevron-down, #reasoningDetailsModal .fa-chevron-up');
-            
-            contents.forEach(content => content.classList.remove('expanded'));
-            chevrons.forEach(chevron => {
-                chevron.classList.remove('fa-chevron-up');
-                chevron.classList.add('fa-chevron-down');
-            });
-        }
-        
-        // Demo function to show sample reasoning data (remove in production)
-        function loadSampleReasoningData() {
-            const sampleLogs = [
-                'Entering new AgentExecutor chain...',
-                '{"timestamp": "2025-06-22T03:46:26.060078", "level": "INFO", "logger": "httpx", "message": "HTTP Request: POST https://api.openai.com/v1/chat/completions \\"HTTP/1.1 200 OK\\"", "module": "_client", "function": "_send_single_request", "line": 1026}',
-                'I need to analyze the flight disruption for Flight ID UA1011 and follow the required steps to check crew duty time legality, find spare crew if necessary, and assess accommodation needs.\n\nAction: check_crew_legality\nAction Input: {"flight_id": "UA1011"}',
-                'Observation: {"legal_crew": [], "illegal_crew": ["C116: Rest period -4.0h below minimum 10h", "C117: Rest period -4.0h below minimum 10h"], "message": "Legal crew: []. Illegal crew: [\'C116: Rest period -4.0h below minimum 10h\', \'C117: Rest period -4.0h below minimum 10h\']"}',
-                'Thought: I see that there are two crew members (C116 and C117) who are illegal due to insufficient rest periods, which are 4 hours below the minimum required 10 hours. This indicates that the crew needs to be reassigned or replaced.',
-                'Action: find_spare_crew\nAction Input: {"location": "ATL"}',
-                'Observation: {"spare_crew": {"crew_id": "S200", "assigned_flight_id": null, "duty_end": null, "status": "active", "base": "ORD", "role": "captain"}, "message": "Found spare crew: S200 at ORD"}',
-                'Final Answer: 1. Crew members C116 and C117 are illegal due to insufficient rest periods.\n2. Found spare crew member S200 in ORD, but no local crew in ATL.\n3. Repositioning flight RP009 available from ORD to ATL.\n4. Handoff to Operations Support: "HANDOFF_TO_OPS: [C116, C117] at [ATL] need accommodation due to [insufficient rest period]."',
-                'Finished chain.'
-            ];
-            
-            sampleLogs.forEach((log, index) => {
-                setTimeout(() => parseAndAddReasoningLog(log), index * 600);
-            });
-        }
-        
-        // Auto-load sample data when page loads (remove in production)
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(loadSampleReasoningData, 2000);
-        });
 
-        // Enhanced WebSocket message handler to capture reasoning
-        const originalHandleSimulationEvent = handleSimulationEvent;
-        handleSimulationEvent = function(data) {
-            // Call original handler
-            originalHandleSimulationEvent(data);
-            
-            // Extract and parse reasoning data for the reasoning log
-            const event = data.event;
-            if (event.type === 'crew_analysis' || event.type === 'ops_support') {
-                if (event.reasoning) {
-                    parseAndAddReasoningLog(event.reasoning);
-                }
-            }
-            
-            // Parse LLM events for detailed reasoning
-            if (event.type === 'llm_crew_reasoning' || event.type === 'llm_ops_reasoning') {
-                const llmEvent = event.llm_event;
-                if (llmEvent) {
-                    parseAndAddReasoningLog(JSON.stringify(llmEvent));
-                }
-            }
-        };
 
         // Handle page visibility changes
         document.addEventListener('visibilitychange', function() {
