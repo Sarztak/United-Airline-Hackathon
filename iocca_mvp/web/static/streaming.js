@@ -29,20 +29,20 @@ class LLMStreamingClient {
     
     // WebSocket Connection Management
     connect() {
-        console.log('🔌 Connecting to WebSocket:', this.wsUrl);
+        console.log('Connecting to WebSocket:', this.wsUrl);
         
         try {
             this.ws = new WebSocket(this.wsUrl);
             this.setupWebSocketHandlers();
         } catch (error) {
-            console.error('❌ WebSocket connection failed:', error);
+            console.error('WebSocket connection failed:', error);
             this.scheduleRetry();
         }
     }
     
     setupWebSocketHandlers() {
         this.ws.onopen = () => {
-            console.log('✅ WebSocket connected');
+            console.log('WebSocket connected');
             this.isConnected = true;
             this.retryCount = 0;
             this.updateConnectionStatus('connected');
@@ -54,12 +54,12 @@ class LLMStreamingClient {
                 const data = JSON.parse(event.data);
                 this.handleMessage(data);
             } catch (error) {
-                console.error('❌ Failed to parse WebSocket message:', error, event.data);
+                console.error('Failed to parse WebSocket message:', error, event.data);
             }
         };
         
         this.ws.onclose = (event) => {
-            console.log('🔌 WebSocket closed:', event.code, event.reason);
+            console.log('WebSocket closed:', event.code, event.reason);
             this.isConnected = false;
             this.updateConnectionStatus('disconnected');
             this.emit('disconnected', event);
@@ -70,20 +70,20 @@ class LLMStreamingClient {
         };
         
         this.ws.onerror = (error) => {
-            console.error('❌ WebSocket error:', error);
+            console.error('WebSocket error:', error);
             this.emit('error', error);
         };
     }
     
     scheduleRetry() {
         this.retryCount++;
-        console.log(`🔄 Scheduling retry ${this.retryCount}/${this.maxRetries} in ${this.retryDelay}ms`);
+        console.log(`Scheduling retry ${this.retryCount}/${this.maxRetries} in ${this.retryDelay}ms`);
         
         setTimeout(() => {
             if (this.retryCount <= this.maxRetries) {
                 this.connect();
             } else {
-                console.error('❌ Max retries exceeded');
+                console.error('Max retries exceeded');
                 this.updateConnectionStatus('failed');
             }
         }, this.retryDelay);
@@ -112,7 +112,7 @@ class LLMStreamingClient {
                 this.handleSimulationComplete(data);
                 break;
             default:
-                console.log('📨 Unknown message type:', messageType, data);
+                console.log('Unknown message type:', messageType, data);
         }
         
         // Emit generic message event
@@ -213,7 +213,7 @@ class LLMStreamingClient {
         stepElement.className = 'reasoning-step';
         stepElement.innerHTML = `
             <div class="step-header">
-                <span class="step-icon">🧠</span>
+                <span class="step-icon"><i class="fas fa-brain"></i></span>
                 <span class="step-name">${this.formatStepName(step)}</span>
             </div>
             <div class="step-content">${content}</div>
@@ -234,7 +234,7 @@ class LLMStreamingClient {
         if (data.type === 'llm_test_error' || data.error) {
             completeElement.innerHTML = `
                 <div class="completion-header error">
-                    <span class="completion-icon">❌</span>
+                    <span class="completion-icon"><i class="fas fa-times-circle text-danger"></i></span>
                     <span>Stream Error</span>
                 </div>
                 <div class="error-message">${data.error || 'Unknown error'}</div>
@@ -242,7 +242,7 @@ class LLMStreamingClient {
         } else {
             completeElement.innerHTML = `
                 <div class="completion-header success">
-                    <span class="completion-icon">✅</span>
+                    <span class="completion-icon"><i class="fas fa-check-circle text-success"></i></span>
                     <span>Stream Complete</span>
                 </div>
                 <div class="completion-summary">
@@ -265,7 +265,7 @@ class LLMStreamingClient {
             streamElement.className = 'llm-stream';
             streamElement.innerHTML = `
                 <div class="stream-header">
-                    <span class="stream-title">🤖 Stream: ${streamId}</span>
+                    <span class="stream-title"><i class="fas fa-robot"></i> Stream: ${streamId}</span>
                     <span class="stream-time">${new Date().toLocaleTimeString()}</span>
                 </div>
                 <div class="stream-content"></div>
@@ -286,7 +286,7 @@ class LLMStreamingClient {
         const headerElement = document.createElement('div');
         headerElement.className = 'section-header';
         headerElement.innerHTML = `
-            <span class="section-icon">📋</span>
+            <span class="section-icon"><i class="fas fa-clipboard-list"></i></span>
             <span class="section-name">${this.formatStepName(section)}</span>
         `;
         streamElement.appendChild(headerElement);
@@ -300,9 +300,9 @@ class LLMStreamingClient {
         if (this.statusElement) {
             this.statusElement.className = `connection-status ${status}`;
             const statusText = {
-                'connected': '🟢 Connected',
-                'disconnected': '🟡 Disconnected',
-                'failed': '🔴 Connection Failed'
+                'connected': 'Connected',
+                'disconnected': 'Disconnected',
+                'failed': 'Connection Failed'
             };
             this.statusElement.textContent = statusText[status] || status;
         }
@@ -337,11 +337,11 @@ class LLMStreamingClient {
     setupEventHandlers() {
         // Set up default event handlers
         this.on('connected', () => {
-            console.log('🎉 LLM Streaming Client connected');
+            console.log('LLM Streaming Client connected');
         });
         
         this.on('error', (error) => {
-            console.error('💥 LLM Streaming Client error:', error);
+            console.error('LLM Streaming Client error:', error);
         });
     }
     
@@ -383,10 +383,10 @@ class LLMStreamingClient {
             }
             
             const result = await response.json();
-            console.log('🚀 LLM streaming test started:', result);
+            console.log('LLM streaming test started:', result);
             return result;
         } catch (error) {
-            console.error('❌ Failed to start LLM streaming test:', error);
+            console.error('Failed to start LLM streaming test:', error);
             throw error;
         }
     }
@@ -405,10 +405,10 @@ class LLMStreamingClient {
             }
             
             const result = await response.json();
-            console.log('🎯 Day simulation started:', result);
+            console.log('Day simulation started:', result);
             return result;
         } catch (error) {
-            console.error('❌ Failed to start day simulation:', error);
+            console.error('Failed to start day simulation:', error);
             throw error;
         }
     }
@@ -419,7 +419,7 @@ window.llmStreaming = null;
 
 // Auto-initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🚀 Initializing LLM Streaming Client');
+    console.log('Initializing LLM Streaming Client');
     window.llmStreaming = new LLMStreamingClient();
 });
 

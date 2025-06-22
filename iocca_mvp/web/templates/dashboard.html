@@ -10,7 +10,7 @@
         body { background-color: #f8f9fa; }
         .card { box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); }
         .status-badge { font-size: 0.875rem; }
-        .agent-card { border-left: 4px solid #007bff; }
+        .agent-card { border-left: 4px solid #0051A5; }
         .logs-container {
             height: 70vh;
             overflow-y: auto;
@@ -49,7 +49,7 @@
         }
         
         .agent-response-card {
-            border-left: 4px solid #007bff;
+            border-left: 4px solid #0051A5;
             transition: all 0.3s ease;
         }
         
@@ -76,13 +76,72 @@
         .metric-card { text-align: center; }
         .processing { animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        
+        /* Reasoning Log Specific Styles */
+        .reasoning-entry {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e9ecef;
+            margin: 0;
+            font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+        }
+        
+        .reasoning-entry.agent_chain { border-left: 4px solid #0051A5; background-color: #f8f9fc; }
+        .reasoning-entry.action { border-left: 4px solid #28a745; background-color: #f8fff9; }
+        .reasoning-entry.observation { border-left: 4px solid #ffc107; background-color: #fffef8; }
+        .reasoning-entry.thought { border-left: 4px solid #6f42c1; background-color: #fbf9ff; }
+        .reasoning-entry.http_request { border-left: 4px solid #fd7e14; background-color: #fff8f5; }
+        .reasoning-entry.final_answer { border-left: 4px solid #198754; background-color: #f0fff4; }
+        
+        .reasoning-entry:hover {
+            background-color: #f1f3f5;
+            cursor: pointer;
+        }
+        
+        .reasoning-timestamp {
+            color: #6c757d;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .reasoning-type {
+            display: inline-block;
+            padding: 0.125rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+        
+        .reasoning-type.agent_chain { background-color: #0051A5; color: white; }
+        .reasoning-type.action { background-color: #28a745; color: white; }
+        .reasoning-type.observation { background-color: #ffc107; color: black; }
+        .reasoning-type.thought { background-color: #6f42c1; color: white; }
+        .reasoning-type.http_request { background-color: #fd7e14; color: white; }
+        .reasoning-type.final_answer { background-color: #198754; color: white; }
+        
+        .reasoning-content {
+            white-space: pre-wrap;
+            line-height: 1.4;
+            margin-top: 0.25rem;
+        }
+        
+        .reasoning-metadata {
+            font-size: 0.75rem;
+            color: #6c757d;
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid #e9ecef;
+        }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #0051A5;">
         <div class="container">
             <a class="navbar-brand" href="/">
-                <i class="fas fa-plane"></i> IOCCA Hub
+                <img src="https://www.logo.wine/a/logo/United_Airlines/United_Airlines-Logo.wine.svg" alt="United Airlines" height="32" class="me-2"> IOCCA Hub
             </a>
             <span class="navbar-text">
                 Day Simulation - Crew Operations Management
@@ -214,6 +273,33 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Model Reasoning Log -->
+                <div class="card mt-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5><i class="fas fa-brain"></i> Model Reasoning Log</h5>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-outline-secondary active" onclick="filterReasoningLogs('all')">All</button>
+                            <button type="button" class="btn btn-outline-info" onclick="filterReasoningLogs('agent_chain')">Agent Chains</button>
+                            <button type="button" class="btn btn-outline-primary" onclick="filterReasoningLogs('actions')">Actions</button>
+                            <button type="button" class="btn btn-outline-success" onclick="filterReasoningLogs('thoughts')">Thoughts</button>
+                            <button type="button" class="btn btn-outline-dark" onclick="clearReasoningLog()">
+                                <i class="fas fa-trash"></i> Clear
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" onclick="toggleReasoningFullscreen()">
+                                <i class="fas fa-expand"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="reasoning-log" class="logs-container">
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-brain"></i>
+                                <p>Model reasoning log will appear here...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -250,14 +336,14 @@
                 
                 if (response.ok) {
                     currentSimulationId = result.simulation_id;
-                    addLog(`Day simulation started: ${result.simulation_id}`, 'info');
+                    addLog(`<i class="fas fa-play-circle text-primary"></i> Day simulation started: ${result.simulation_id}`, 'info');
                     loadSimulations();
                     monitorSimulation(result.simulation_id);
                 } else {
-                    addLog(`Error: ${result.detail}`, 'error');
+                    addLog(`<i class="fas fa-exclamation-circle text-danger"></i> Error: ${result.detail}`, 'error');
                 }
             } catch (error) {
-                addLog(`Error: ${error.message}`, 'error');
+                addLog(`<i class="fas fa-exclamation-circle text-danger"></i> Error: ${error.message}`, 'error');
             } finally {
                 button.disabled = false;
                 button.innerHTML = '<i class="fas fa-calendar-day"></i> Start Day Simulation';
@@ -273,7 +359,7 @@
             
             websocket.onopen = function(event) {
                 console.log('WebSocket connected');
-                addLog('Real-time monitoring connected', 'info');
+                addLog('<i class="fas fa-wifi text-success"></i> Real-time monitoring connected', 'info');
             };
             
             websocket.onmessage = function(event) {
@@ -287,13 +373,13 @@
             
             websocket.onclose = function(event) {
                 console.log('WebSocket disconnected');
-                addLog('Real-time monitoring disconnected', 'warning');
+                addLog('<i class="fas fa-wifi text-warning"></i> Real-time monitoring disconnected', 'warning');
                 setTimeout(connectWebSocket, 5000);
             };
             
             websocket.onerror = function(error) {
                 console.error('WebSocket error:', error);
-                addLog('WebSocket connection error', 'error');
+                addLog('<i class="fas fa-exclamation-triangle text-danger"></i> WebSocket connection error', 'error');
             };
         }
 
@@ -316,49 +402,49 @@
             
             switch (event.type) {
                 case 'time_update':
-                    logMessage = `⏰ ${event.message}`;
+                    logMessage = `Time Update: ${event.message}`;
                     logType = 'info';
                     break;
                 case 'normal_operation':
-                    logMessage = `✅ ${event.flight_id} departed on time from ${event.origin} to ${event.destination}`;
+                    logMessage = `<i class="fas fa-check-circle text-success"></i> ${event.flight_id} departed on time from ${event.origin} to ${event.destination}`;
                     logType = 'success';
                     break;
                 case 'disruption_detected':
-                    logMessage = `⚠️ DISRUPTION: ${event.flight_id} - ${event.description}`;
+                    logMessage = `<i class="fas fa-exclamation-triangle text-warning"></i> DISRUPTION: ${event.flight_id} - ${event.description}`;
                     logType = 'disruption';
                     break;
                 case 'crew_analysis':
-                    logMessage = `👥 CREW ANALYSIS: ${event.flight_id} - ${event.reasoning.substring(0, 100)}...`;
+                    logMessage = `<i class="fas fa-users text-info"></i> CREW ANALYSIS: ${event.flight_id} - ${event.reasoning.substring(0, 100)}...`;
                     logType = 'crew_analysis';
                     // Store full event data for detailed view
                     storeEventForDetails(event);
                     break;
                 case 'ops_support':
-                    logMessage = `🏨 OPS SUPPORT: ${event.flight_id} - ${event.reasoning.substring(0, 100)}...`;
+                    logMessage = `<i class="fas fa-headset text-primary"></i> OPS SUPPORT: ${event.flight_id} - ${event.reasoning.substring(0, 100)}...`;
                     logType = 'crew_analysis';
                     // Store full event data for detailed view
                     storeEventForDetails(event);
                     break;
                 case 'disruption_resolved':
-                    logMessage = `✅ RESOLVED: ${event.flight_id} - ${event.resolution}`;
+                    logMessage = `<i class="fas fa-check-circle text-success"></i> RESOLVED: ${event.flight_id} - ${event.resolution}`;
                     logType = 'resolution';
                     break;
                 case 'llm_crew_reasoning':
                     if (event.llm_event && event.llm_event.type === 'token') {
                         return;
                     }
-                    logMessage = `🤖 CREW LLM: ${event.flight_id} - Live reasoning in progress`;
+                    logMessage = `<i class="fas fa-robot text-info"></i> CREW LLM: ${event.flight_id} - Live reasoning in progress`;
                     logType = 'crew_analysis';
                     break;
                 case 'llm_ops_reasoning':
                     if (event.llm_event && event.llm_event.type === 'token') {
                         return;
                     }
-                    logMessage = `🤖 OPS LLM: ${event.flight_id} - Live reasoning in progress`;
+                    logMessage = `<i class="fas fa-robot text-primary"></i> OPS LLM: ${event.flight_id} - Live reasoning in progress`;
                     logType = 'crew_analysis';
                     break;
                 default:
-                    logMessage = `📋 ${event.type}: ${JSON.stringify(event)}`;
+                    logMessage = `<i class="fas fa-clipboard-list"></i> ${event.type}: ${JSON.stringify(event)}`;
                     logType = 'info';
             }
             
@@ -368,14 +454,14 @@
 
         // Handle simulation completion
         function handleSimulationComplete(data) {
-            addLog(`🎉 Day simulation completed: ${data.simulation_id}`, 'success');
+            addLog(`<i class="fas fa-trophy text-success"></i> Day simulation completed: ${data.simulation_id}`, 'success');
             currentSimulationId = null;
             loadSimulations();
         }
 
         // Handle simulation error
         function handleSimulationError(data) {
-            addLog(`❌ Simulation error: ${data.error}`, 'error');
+            addLog(`<i class="fas fa-exclamation-circle text-danger"></i> Simulation error: ${data.error}`, 'error');
             currentSimulationId = null;
             loadSimulations();
         }
@@ -388,12 +474,12 @@
                     const data = await response.json();
                     
                     if (data.status === 'completed') {
-                        addLog(`Simulation ${simulationId} completed successfully`, 'success');
+                        addLog(`<i class="fas fa-check-circle text-success"></i> Simulation ${simulationId} completed successfully`, 'success');
                         loadSimulations();
                         currentSimulationId = null;
                         break;
                     } else if (data.status === 'failed') {
-                        addLog(`Simulation ${simulationId} failed: ${data.error}`, 'error');
+                        addLog(`<i class="fas fa-times-circle text-danger"></i> Simulation ${simulationId} failed: ${data.error}`, 'error');
                         loadSimulations();
                         currentSimulationId = null;
                         break;
@@ -401,7 +487,7 @@
                     
                     await new Promise(resolve => setTimeout(resolve, 2000));
                 } catch (error) {
-                    addLog(`Error monitoring simulation: ${error.message}`, 'error');
+                    addLog(`<i class="fas fa-exclamation-triangle text-warning"></i> Error monitoring simulation: ${error.message}`, 'error');
                     break;
                 }
             }
@@ -450,7 +536,7 @@
                 
             } catch (error) {
                 console.error('Error loading simulations:', error);
-                addLog(`Error loading simulations: ${error.message}`, 'error');
+                addLog(`<i class="fas fa-exclamation-triangle text-danger"></i> Error loading simulations: ${error.message}`, 'error');
             }
         }
 
@@ -550,7 +636,7 @@
                     alert('System Configuration:\n' + JSON.stringify(data, null, 2));
                 })
                 .catch(error => {
-                    addLog(`Error loading config: ${error.message}`, 'error');
+                    addLog(`<i class="fas fa-cog text-danger"></i> Error loading config: ${error.message}`, 'error');
                 });
         }
 
@@ -760,6 +846,191 @@
             }
         }
         
+        // Reasoning Log Functions
+        function addReasoningLog(content, type, metadata = {}) {
+            const container = document.getElementById('reasoning-log');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            const reasoningEntry = document.createElement('div');
+            reasoningEntry.className = `reasoning-entry ${type}`;
+            reasoningEntry.setAttribute('data-type', type);
+            
+            let metadataHtml = '';
+            if (Object.keys(metadata).length > 0) {
+                metadataHtml = `
+                    <div class="reasoning-metadata">
+                        ${Object.entries(metadata).map(([key, value]) => 
+                            `<strong>${key}:</strong> ${value}`
+                        ).join(' | ')}
+                    </div>
+                `;
+            }
+            
+            reasoningEntry.innerHTML = `
+                <div class="reasoning-timestamp">${timestamp}</div>
+                <div class="reasoning-type ${type}">${type.replace(/_/g, ' ')}</div>
+                <div class="reasoning-content">${content}</div>
+                ${metadataHtml}
+            `;
+            
+            container.appendChild(reasoningEntry);
+            container.scrollTop = container.scrollHeight;
+            
+            // Keep only last 200 reasoning entries
+            while (container.children.length > 200) {
+                container.removeChild(container.firstChild);
+            }
+        }
+        
+        function parseAndAddReasoningLog(logData) {
+            // Parse different types of log entries based on the example provided
+            const logText = typeof logData === 'string' ? logData : JSON.stringify(logData);
+            
+            // Detect different patterns in the log
+            if (logText.includes('Entering new AgentExecutor chain')) {
+                addReasoningLog('Agent chain started', 'agent_chain');
+            } else if (logText.includes('Finished chain')) {
+                addReasoningLog('Agent chain completed', 'agent_chain');
+            } else if (logText.includes('HTTP Request:')) {
+                const match = logText.match(/HTTP Request: (POST|GET|PUT|DELETE) (.*?) "HTTP\/1\.1 (\d+) (\w+)"/);
+                if (match) {
+                    const [, method, url, status, statusText] = match;
+                    addReasoningLog(`${method} ${url}`, 'http_request', {
+                        'Status': `${status} ${statusText}`,
+                        'Method': method
+                    });
+                }
+            } else if (logText.includes('Action:')) {
+                const actionMatch = logText.match(/Action: (.*?)[\n\r]/);
+                const inputMatch = logText.match(/Action Input: (.*?)[\n\r]/);
+                if (actionMatch) {
+                    addReasoningLog(`${actionMatch[1]}${inputMatch ? `\nInput: ${inputMatch[1]}` : ''}`, 'action');
+                }
+            } else if (logText.includes('Observation:')) {
+                const obsMatch = logText.match(/Observation: (.*?)[\n\r]/);
+                if (obsMatch) {
+                    addReasoningLog(obsMatch[1], 'observation');
+                }
+            } else if (logText.includes('Thought:')) {
+                const thoughtMatch = logText.match(/Thought:(.*?)(?=Action:|Final Answer:|$)/s);
+                if (thoughtMatch) {
+                    addReasoningLog(thoughtMatch[1].trim(), 'thought');
+                }
+            } else if (logText.includes('Final Answer:')) {
+                const answerMatch = logText.match(/Final Answer:(.*?)$/s);
+                if (answerMatch) {
+                    addReasoningLog(answerMatch[1].trim(), 'final_answer');
+                }
+            } else if (logText.includes('timestamp') && logText.includes('level')) {
+                // Handle structured log entries
+                try {
+                    const parsed = JSON.parse(logText);
+                    addReasoningLog(parsed.message || 'Log entry', 'http_request', {
+                        'Level': parsed.level,
+                        'Logger': parsed.logger,
+                        'Module': parsed.module
+                    });
+                } catch (e) {
+                    // Fallback for malformed JSON
+                    addReasoningLog(logText.substring(0, 100) + '...', 'thought');
+                }
+            }
+        }
+        
+        function filterReasoningLogs(filterType) {
+            const container = document.getElementById('reasoning-log');
+            const entries = container.querySelectorAll('.reasoning-entry');
+            
+            // Update button states
+            const reasoningButtons = document.querySelectorAll('.card:last-child .btn-group button');
+            reasoningButtons.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent.toLowerCase().includes(filterType) || 
+                    (filterType === 'all' && btn.textContent === 'All')) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            entries.forEach(entry => {
+                if (filterType === 'all') {
+                    entry.style.display = 'block';
+                } else {
+                    const entryType = entry.getAttribute('data-type');
+                    if (filterType === 'agent_chain' && entryType === 'agent_chain') {
+                        entry.style.display = 'block';
+                    } else if (filterType === 'actions' && entryType === 'action') {
+                        entry.style.display = 'block';
+                    } else if (filterType === 'thoughts' && entryType === 'thought') {
+                        entry.style.display = 'block';
+                    } else {
+                        entry.style.display = 'none';
+                    }
+                }
+            });
+        }
+        
+        function clearReasoningLog() {
+            const container = document.getElementById('reasoning-log');
+            container.innerHTML = `
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-brain"></i>
+                    <p>Model reasoning log will appear here...</p>
+                </div>
+            `;
+        }
+        
+        function toggleReasoningFullscreen() {
+            const container = document.getElementById('reasoning-log');
+            container.classList.toggle('fullscreen');
+        }
+        
+        // Demo function to show sample reasoning data (remove in production)
+        function loadSampleReasoningData() {
+            const sampleLogs = [
+                'Entering new AgentExecutor chain...',
+                '{"timestamp": "2025-06-22T03:46:26.060078", "level": "INFO", "logger": "httpx", "message": "HTTP Request: POST https://api.openai.com/v1/chat/completions \\"HTTP/1.1 200 OK\\"", "module": "_client", "function": "_send_single_request", "line": 1026}',
+                'I need to analyze the flight disruption for Flight ID UA1011 and follow the required steps to check crew duty time legality, find spare crew if necessary, and assess accommodation needs.\n\nAction: check_crew_legality\nAction Input: {"flight_id": "UA1011"}',
+                'Observation: {"legal_crew": [], "illegal_crew": ["C116: Rest period -4.0h below minimum 10h", "C117: Rest period -4.0h below minimum 10h"], "message": "Legal crew: []. Illegal crew: [\'C116: Rest period -4.0h below minimum 10h\', \'C117: Rest period -4.0h below minimum 10h\']"}',
+                'Thought: I see that there are two crew members (C116 and C117) who are illegal due to insufficient rest periods, which are 4 hours below the minimum required 10 hours. This indicates that the crew needs to be reassigned or replaced.',
+                'Action: find_spare_crew\nAction Input: {"location": "ATL"}',
+                'Observation: {"spare_crew": {"crew_id": "S200", "assigned_flight_id": null, "duty_end": null, "status": "active", "base": "ORD", "role": "captain"}, "message": "Found spare crew: S200 at ORD"}',
+                'Final Answer: 1. Crew members C116 and C117 are illegal due to insufficient rest periods.\n2. Found spare crew member S200 in ORD, but no local crew in ATL.\n3. Repositioning flight RP009 available from ORD to ATL.\n4. Handoff to Operations Support: "HANDOFF_TO_OPS: [C116, C117] at [ATL] need accommodation due to [insufficient rest period]."',
+                'Finished chain.'
+            ];
+            
+            sampleLogs.forEach((log, index) => {
+                setTimeout(() => parseAndAddReasoningLog(log), index * 500);
+            });
+        }
+        
+        // Auto-load sample data when page loads (remove in production)
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(loadSampleReasoningData, 2000);
+        });
+
+        // Enhanced WebSocket message handler to capture reasoning
+        const originalHandleSimulationEvent = handleSimulationEvent;
+        handleSimulationEvent = function(data) {
+            // Call original handler
+            originalHandleSimulationEvent(data);
+            
+            // Extract and parse reasoning data for the reasoning log
+            const event = data.event;
+            if (event.type === 'crew_analysis' || event.type === 'ops_support') {
+                if (event.reasoning) {
+                    parseAndAddReasoningLog(event.reasoning);
+                }
+            }
+            
+            // Parse LLM events for detailed reasoning
+            if (event.type === 'llm_crew_reasoning' || event.type === 'llm_ops_reasoning') {
+                const llmEvent = event.llm_event;
+                if (llmEvent) {
+                    parseAndAddReasoningLog(JSON.stringify(llmEvent));
+                }
+            }
+        };
+
         // Handle page visibility changes
         document.addEventListener('visibilitychange', function() {
             if (document.hidden) {
