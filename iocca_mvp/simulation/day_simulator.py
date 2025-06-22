@@ -41,20 +41,37 @@ class DaySimulator:
         self.ops_agent.set_context(self.hotel_inventory)
     
     def _generate_daily_schedule(self) -> List[Dict[str, Any]]:
-        """Generate a realistic daily flight schedule"""
+        """Generate a strategic daily flight schedule for better showcases"""
         flights = []
-        flight_routes = [
+        
+        # Hub-based routes that will have good spare crew and repositioning options
+        strategic_routes = [
             ("ORD", "LAX"), ("LAX", "ORD"), ("ORD", "DEN"), ("DEN", "ORD"),
-            ("SFO", "SEA"), ("SEA", "SFO"), ("MIA", "JFK"), ("JFK", "MIA"),
-            ("ATL", "DFW"), ("DFW", "ATL"), ("BOS", "IAD"), ("IAD", "BOS")
+            ("ORD", "ATL"), ("ATL", "ORD"), ("DEN", "LAX"), ("LAX", "DEN"),
+            ("DEN", "SFO"), ("SFO", "DEN"), ("ATL", "MIA"), ("MIA", "ATL"),
+            ("JFK", "BOS"), ("BOS", "JFK"), ("SEA", "SFO"), ("SFO", "SEA"),
+            ("DFW", "ATL"), ("ATL", "DFW"), ("IAD", "BOS"), ("BOS", "IAD")
         ]
         
         base_time = datetime.now().replace(hour=6, minute=0, second=0, microsecond=0)
         
-        for i in range(24):  # 24 flights throughout the day
-            origin, destination = random.choice(flight_routes)
-            dep_time = base_time + timedelta(hours=random.uniform(0, 18))
-            arr_time = dep_time + timedelta(hours=random.uniform(2, 6))
+        # Generate flights with realistic timing across the day
+        for i in range(20):  # 20 strategic flights throughout the day
+            origin, destination = random.choice(strategic_routes)
+            
+            # Distribute flights across different time periods
+            if i < 6:  # Morning flights (6-10 AM)
+                dep_time = base_time + timedelta(hours=random.uniform(0, 4))
+            elif i < 12:  # Midday flights (10 AM - 2 PM)
+                dep_time = base_time + timedelta(hours=random.uniform(4, 8))
+            elif i < 18:  # Afternoon flights (2-6 PM)
+                dep_time = base_time + timedelta(hours=random.uniform(8, 12))
+            else:  # Evening flights (6-10 PM)
+                dep_time = base_time + timedelta(hours=random.uniform(12, 16))
+            
+            # Calculate realistic flight times based on distance
+            flight_duration = self._calculate_flight_duration(origin, destination)
+            arr_time = dep_time + timedelta(hours=flight_duration)
             
             flights.append({
                 "flight_id": f"UA{1000 + i}",
@@ -67,6 +84,24 @@ class DaySimulator:
             })
         
         return sorted(flights, key=lambda x: x["scheduled_dep"])
+    
+    def _calculate_flight_duration(self, origin: str, destination: str) -> float:
+        """Calculate realistic flight duration based on origin/destination"""
+        # Rough flight durations in hours for common routes
+        durations = {
+            ("ORD", "LAX"): 4.5, ("LAX", "ORD"): 4.0,
+            ("ORD", "DEN"): 2.5, ("DEN", "ORD"): 2.0,
+            ("ORD", "ATL"): 2.0, ("ATL", "ORD"): 2.0,
+            ("DEN", "LAX"): 2.5, ("LAX", "DEN"): 2.5,
+            ("DEN", "SFO"): 2.5, ("SFO", "DEN"): 2.0,
+            ("ATL", "MIA"): 2.0, ("MIA", "ATL"): 2.0,
+            ("JFK", "BOS"): 1.5, ("BOS", "JFK"): 1.5,
+            ("SEA", "SFO"): 2.0, ("SFO", "SEA"): 2.0,
+            ("DFW", "ATL"): 2.0, ("ATL", "DFW"): 2.5,
+            ("IAD", "BOS"): 1.5, ("BOS", "IAD"): 1.5
+        }
+        
+        return durations.get((origin, destination), 3.0)  # Default 3 hours
     
     def _generate_crew_roster(self) -> List[Dict[str, Any]]:
         """Generate crew roster for the day"""
@@ -94,11 +129,40 @@ class DaySimulator:
                 }
             ])
         
-        # Spare crew
-        for i, base in enumerate(bases):
+        # Strategic spare crew placement - more at major hubs
+        major_hubs = ["ORD", "DEN", "LAX", "ATL"]
+        secondary_bases = ["SFO", "SEA", "MIA", "JFK", "DFW", "BOS", "IAD"]
+        
+        spare_crew_counter = 200
+        
+        # Extra spare crew at major hubs (3 captains, 3 first officers each)
+        for hub in major_hubs:
+            for crew_num in range(3):
+                crew.extend([
+                    {
+                        "crew_id": f"S{spare_crew_counter}",
+                        "assigned_flight_id": None,
+                        "duty_end": None,
+                        "status": "active",
+                        "base": hub,
+                        "role": "captain"
+                    },
+                    {
+                        "crew_id": f"S{spare_crew_counter + 1}",
+                        "assigned_flight_id": None,
+                        "duty_end": None,
+                        "status": "active",
+                        "base": hub,
+                        "role": "first_officer"
+                    }
+                ])
+                spare_crew_counter += 2
+        
+        # Regular spare crew at secondary bases (1 captain, 1 first officer each)
+        for base in secondary_bases:
             crew.extend([
                 {
-                    "crew_id": f"S{200 + i*2}",
+                    "crew_id": f"S{spare_crew_counter}",
                     "assigned_flight_id": None,
                     "duty_end": None,
                     "status": "active",
@@ -106,7 +170,7 @@ class DaySimulator:
                     "role": "captain"
                 },
                 {
-                    "crew_id": f"S{200 + i*2 + 1}",
+                    "crew_id": f"S{spare_crew_counter + 1}",
                     "assigned_flight_id": None,
                     "duty_end": None,
                     "status": "active",
@@ -114,51 +178,113 @@ class DaySimulator:
                     "role": "first_officer"
                 }
             ])
+            spare_crew_counter += 2
         
         return crew
     
     def _generate_hotel_inventory(self) -> List[Dict[str, Any]]:
-        """Generate hotel inventory"""
+        """Generate strategic hotel inventory for better showcases"""
         hotels = []
-        locations = ["ORD", "LAX", "DEN", "SFO", "SEA", "MIA", "JFK", "ATL", "DFW", "BOS", "IAD"]
+        major_hubs = ["ORD", "LAX", "DEN", "SFO", "SEA", "MIA", "JFK", "ATL", "DFW", "BOS", "IAD"]
         hotel_names = [
             "Airport Plaza", "Runway Inn", "Sky Harbor Hotel", "Terminal Suites", 
             "Crew Rest Lodge", "Aviation Center", "Jetway Hotel", "Concourse Inn"
         ]
         
-        for i, location in enumerate(locations):
-            for j in range(2):  # 2 hotels per location
+        hotel_counter = 1
+        
+        for location in major_hubs:
+            # Each location gets 2-3 hotels with strategic availability
+            num_hotels = random.choice([2, 3])
+            
+            for j in range(num_hotels):
+                # Ensure at least one hotel per location has rooms available
+                if j == 0:  # First hotel always has good availability
+                    available_rooms = random.randint(4, 8)
+                elif j == 1:  # Second hotel has moderate availability
+                    available_rooms = random.randint(2, 6)
+                else:  # Third hotel might be full or have few rooms
+                    available_rooms = random.randint(0, 3)
+                
                 hotels.append({
-                    "hotel_id": f"H{i*2 + j + 1:03d}",
+                    "hotel_id": f"H{hotel_counter:03d}",
                     "location": location,
                     "name": f"{random.choice(hotel_names)} {location}",
-                    "available_rooms": random.randint(0, 8),  # Some will be full
-                    "crew_rate": random.randint(80, 150)
+                    "available_rooms": available_rooms,
+                    "crew_rate": random.randint(89, 139)  # Crew rates
                 })
+                hotel_counter += 1
         
         return hotels
     
     def _generate_repositioning_flights(self) -> List[Dict[str, Any]]:
-        """Generate repositioning flight options"""
+        """Generate strategic repositioning flight options for better showcases"""
         reposition_flights = []
-        bases = ["ORD", "LAX", "DEN", "SFO", "SEA", "MIA", "JFK", "ATL", "DFW", "BOS", "IAD"]
         
-        # Generate repositioning options between major bases
-        for i, origin in enumerate(bases):
-            for j, destination in enumerate(bases):
-                if origin != destination and random.random() < 0.3:  # 30% chance of route
-                    base_time = datetime.now().replace(hour=6, minute=0, second=0, microsecond=0)
-                    dep_time = base_time + timedelta(hours=random.uniform(1, 16))
-                    arr_time = dep_time + timedelta(hours=random.uniform(1.5, 5))
-                    
-                    reposition_flights.append({
-                        "flight_id": f"RP{len(reposition_flights) + 1:03d}",
-                        "origin": origin,
-                        "destination": destination,
-                        "sched_dep": dep_time.isoformat(),
-                        "sched_arr": arr_time.isoformat(),
-                        "seats_available": random.choice([True, False])
-                    })
+        # Major hub-to-hub routes that are commonly needed
+        major_routes = [
+            ("ORD", "DEN"), ("DEN", "ORD"),
+            ("ORD", "LAX"), ("LAX", "ORD"), 
+            ("ORD", "ATL"), ("ATL", "ORD"),
+            ("DEN", "LAX"), ("LAX", "DEN"),
+            ("DEN", "SFO"), ("SFO", "DEN"),
+            ("ATL", "MIA"), ("MIA", "ATL"),
+            ("JFK", "BOS"), ("BOS", "JFK"),
+            ("SEA", "SFO"), ("SFO", "SEA"),
+            ("DFW", "ATL"), ("ATL", "DFW"),
+            ("IAD", "BOS"), ("BOS", "IAD")
+        ]
+        
+        base_time = datetime.now().replace(hour=6, minute=0, second=0, microsecond=0)
+        
+        # Generate multiple flights per day for each major route (high success probability)
+        for origin, destination in major_routes:
+            # Morning repositioning (6-10 AM)
+            dep_time = base_time + timedelta(hours=random.uniform(0.5, 4))
+            arr_time = dep_time + timedelta(hours=random.uniform(1.5, 4))
+            
+            reposition_flights.append({
+                "flight_id": f"RP{len(reposition_flights) + 1:03d}",
+                "origin": origin,
+                "destination": destination,
+                "sched_dep": dep_time.isoformat(),
+                "sched_arr": arr_time.isoformat(),
+                "seats_available": True  # High availability for showcase
+            })
+            
+            # Afternoon repositioning (12-4 PM)
+            dep_time = base_time + timedelta(hours=random.uniform(6, 10))
+            arr_time = dep_time + timedelta(hours=random.uniform(1.5, 4))
+            
+            reposition_flights.append({
+                "flight_id": f"RP{len(reposition_flights) + 1:03d}",
+                "origin": origin,
+                "destination": destination,
+                "sched_dep": dep_time.isoformat(),
+                "sched_arr": arr_time.isoformat(),
+                "seats_available": random.choice([True, True, False])  # 67% success rate
+            })
+        
+        # Add some additional connecting routes
+        additional_routes = [
+            ("PHX", "LAX"), ("LAX", "PHX"),
+            ("PDX", "SEA"), ("SEA", "PDX"),
+            ("MSP", "ORD"), ("ORD", "MSP"),
+            ("CLT", "ATL"), ("ATL", "CLT")
+        ]
+        
+        for origin, destination in additional_routes:
+            dep_time = base_time + timedelta(hours=random.uniform(2, 14))
+            arr_time = dep_time + timedelta(hours=random.uniform(1.5, 3))
+            
+            reposition_flights.append({
+                "flight_id": f"RP{len(reposition_flights) + 1:03d}",
+                "origin": origin,
+                "destination": destination,
+                "sched_dep": dep_time.isoformat(),
+                "sched_arr": arr_time.isoformat(),
+                "seats_available": random.choice([True, False])  # 50% success rate
+            })
         
         return reposition_flights
     

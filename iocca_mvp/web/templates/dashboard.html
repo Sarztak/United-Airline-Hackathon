@@ -6,7 +6,6 @@
     <title>{{ title }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="/static/streaming.css" rel="stylesheet">
     <style>
         body { background-color: #f8f9fa; }
         .card { box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); }
@@ -40,7 +39,7 @@
         }
         
         .log-entry.disruption { border-left: 4px solid #dc3545; }
-        .log-entry.analysis { border-left: 4px solid #0dcaf0; }
+        .log-entry.crew_analysis { border-left: 4px solid #0dcaf0; }
         .log-entry.resolution { border-left: 4px solid #198754; }
         .log-entry.normal { border-left: 4px solid #6c757d; }
         
@@ -55,21 +54,6 @@
             white-space: pre-wrap;
         }
         
-        .reasoning-section {
-            background: #f1f3f4;
-            padding: 1rem;
-            margin: 0.5rem 0;
-            border-radius: 4px;
-            border: 1px solid #dee2e6;
-        }
-        
-        .reasoning-header {
-            font-weight: bold;
-            color: #495057;
-            border-bottom: 1px solid #dee2e6;
-            padding-bottom: 0.5rem;
-            margin-bottom: 0.5rem;
-        }
         .metric-card { text-align: center; }
         .processing { animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
@@ -82,7 +66,7 @@
                 <i class="fas fa-plane"></i> IOCCA Hub
             </a>
             <span class="navbar-text">
-                Irregular Operations Crew Coordination Agent 
+                Day Simulation - Crew Operations Management
             </span>
         </div>
     </nav>
@@ -94,10 +78,10 @@
                 <div class="card metric-card">
                     <div class="card-body">
                         <h5 class="card-title">
-                            <i class="fas fa-tasks text-primary"></i>
+                            <i class="fas fa-play text-primary"></i>
                         </h5>
-                        <h3 id="active-requests">{{ active_requests }}</h3>
-                        <p class="text-muted">Active Requests</p>
+                        <h3 id="active-simulations">{{ active_simulations }}</h3>
+                        <p class="text-muted">Active Simulations</p>
                     </div>
                 </div>
             </div>
@@ -105,10 +89,10 @@
                 <div class="card metric-card">
                     <div class="card-body">
                         <h5 class="card-title">
-                            <i class="fas fa-exclamation-triangle text-warning"></i>
+                            <i class="fas fa-calendar-day text-warning"></i>
                         </h5>
-                        <h3 id="total-disruptions">{{ total_disruptions }}</h3>
-                        <p class="text-muted">Total Disruptions</p>
+                        <h3 id="total-simulations">{{ total_simulations }}</h3>
+                        <p class="text-muted">Total Simulations</p>
                     </div>
                 </div>
             </div>
@@ -147,93 +131,39 @@
                     </div>
                     <div class="card-body">
                         <div class="mb-3">
-                            <label for="scenario-select" class="form-label">Choose Scenario:</label>
-                            <select id="scenario-select" class="form-select">
-                                <option value="weather_delay">Weather Delay - Crew Legal</option>
-                                <option value="crew_timeout">Crew Duty Time Violation</option>
-                                <option value="hotel_shortage">Hotel Capacity Crisis</option>
-                                <option value="maintenance_delay">Extended Maintenance</option>
-                                <option value="perfect_scenario">Smooth Operations</option>
-                            </select>
+                            <p class="text-muted mb-3">Experience a full day of airline operations with realistic crew disruptions, agent reasoning, and automated resolutions.</p>
                         </div>
                         
-                        <button id="simulate-disruption" class="btn btn-warning btn-lg w-100 mb-2">
-                            <i class="fas fa-bolt"></i> Simulate Disruption
-                        </button>
-                        
-                        <button id="simulate-streaming-disruption" class="btn btn-info btn-lg w-100 mb-2">
-                            <i class="fas fa-brain"></i> Streaming LLM Analysis
-                        </button>
-                        
-                        <button id="start-day-simulation" class="btn btn-success btn-lg w-100 mb-3">
+                        <button id="start-day-simulation" class="btn btn-primary btn-lg w-100 mb-3">
                             <i class="fas fa-calendar-day"></i> Start Day Simulation
                         </button>
                         
                         <div class="d-grid gap-2">
                             <button class="btn btn-outline-primary" onclick="refreshDashboard()">
-                                <i class="fas fa-sync"></i> Refresh
+                                <i class="fas fa-sync"></i> Refresh Dashboard
                             </button>
                             <button class="btn btn-outline-info" onclick="showConfig()">
-                                <i class="fas fa-cog"></i> Configuration
+                                <i class="fas fa-cog"></i> System Config
                             </button>
-                            <button class="btn btn-outline-secondary" onclick="showPolicies()">
-                                <i class="fas fa-book"></i> Policies
-                            </button>
-                            <a href="/streaming" class="btn btn-outline-success">
-                                <i class="fas fa-stream"></i> Streaming Test
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Agents Status -->
-                <div class="card mt-3">
-                    <div class="card-header">
-                        <h5><i class="fas fa-robot"></i> Agent Status</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="agent-card card mb-2">
-                            <div class="card-body p-2">
-                                <div class="d-flex justify-content-between">
-                                    <span>Crew Assignment</span>
-                                    <span class="badge bg-success">Online</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="agent-card card mb-2">
-                            <div class="card-body p-2">
-                                <div class="d-flex justify-content-between">
-                                    <span>Ops Support</span>
-                                    <span class="badge bg-success">Online</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="agent-card card mb-2">
-                            <div class="card-body p-2">
-                                <div class="d-flex justify-content-between">
-                                    <span>Policy LLM</span>
-                                    <span class="badge bg-success">Online</span>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Disruption History -->
+            <!-- Simulation Status -->
             <div class="col-md-8">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5><i class="fas fa-history"></i> Recent Disruptions</h5>
-                        <button class="btn btn-sm btn-outline-primary" onclick="loadDisruptions()">
+                        <h5><i class="fas fa-calendar-day"></i> Day Simulation Status</h5>
+                        <button class="btn btn-sm btn-outline-primary" onclick="loadSimulations()">
                             <i class="fas fa-sync"></i>
                         </button>
                     </div>
                     <div class="card-body">
-                        <div id="disruptions-list">
+                        <div id="simulations-list">
                             <div class="text-center text-muted py-4">
                                 <i class="fas fa-info-circle"></i>
-                                <p>No disruptions to display. Click "Simulate Disruption" to get started.</p>
+                                <p>No simulations running. Click "Start Day Simulation" to begin.</p>
                             </div>
                         </div>
                     </div>
@@ -246,7 +176,7 @@
                         <div class="btn-group btn-group-sm" role="group">
                             <button type="button" class="btn btn-outline-secondary active" onclick="filterLogs('all')">All</button>
                             <button type="button" class="btn btn-outline-warning" onclick="filterLogs('disruptions')">Disruptions</button>
-                            <button type="button" class="btn btn-outline-info" onclick="filterLogs('analysis')">Analysis</button>
+                            <button type="button" class="btn btn-outline-info" onclick="filterLogs('crew_analysis')">Crew Analysis</button>
                             <button type="button" class="btn btn-outline-success" onclick="filterLogs('resolutions')">Resolutions</button>
                             <button type="button" class="btn btn-outline-primary" onclick="toggleFullscreen()">
                                 <i class="fas fa-expand"></i>
@@ -254,41 +184,13 @@
                         </div>
                     </div>
                     <div class="card-body p-0">
-                        <div id="logs-container" class="logs-container">
-                            <div class="p-3">
-                                <small class="text-muted">Operations log will appear here...</small>
+                        <div id="operations-log" class="logs-container">
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-info-circle"></i>
+                                <p>Operations log will appear here...</p>
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modals -->
-    <div class="modal fade" id="configModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">System Configuration</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="config-content">Loading...</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="policiesModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Available Policies</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="policies-content">Loading...</div>
                 </div>
             </div>
         </div>
@@ -298,110 +200,21 @@
     <script>
         // Global variables
         let refreshInterval;
-        let currentDisruptionId = null;
         let currentSimulationId = null;
         let websocket = null;
 
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
-            loadScenarios();
             checkSystemHealth();
-            loadDisruptions();
+            loadSimulations();
             startAutoRefresh();
             connectWebSocket();
-        });
-
-        // Load available scenarios
-        async function loadScenarios() {
-            try {
-                const response = await fetch('/api/scenarios');
-                const data = await response.json();
-                
-                const select = document.getElementById('scenario-select');
-                select.innerHTML = '';
-                
-                data.scenarios.forEach(scenario => {
-                    const option = document.createElement('option');
-                    option.value = scenario.id;
-                    option.textContent = scenario.name;
-                    option.title = scenario.description;
-                    select.appendChild(option);
-                });
-            } catch (error) {
-                console.error('Failed to load scenarios:', error);
-            }
-        }
-
-        // Simulate disruption
-        document.getElementById('simulate-disruption').addEventListener('click', async function() {
-            const button = this;
-            const scenarioSelect = document.getElementById('scenario-select');
-            const selectedScenario = scenarioSelect.value;
-            
-            button.disabled = true;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-
-            try {
-                const response = await fetch(`/api/disruption/simulate?scenario_id=${selectedScenario}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                
-                const result = await response.json();
-                
-                if (response.ok) {
-                    currentDisruptionId = result.disruption_id;
-                    addLog(`Disruption simulation started: ${result.disruption_id}`, 'info');
-                    loadDisruptions();
-                    monitorDisruption(result.disruption_id);
-                } else {
-                    addLog(`Error: ${result.detail}`, 'error');
-                }
-            } catch (error) {
-                addLog(`Error: ${error.message}`, 'error');
-            } finally {
-                button.disabled = false;
-                button.innerHTML = '<i class="fas fa-bolt"></i> Simulate Disruption';
-            }
-        });
-        
-        // Simulate streaming disruption with live LLM
-        document.getElementById('simulate-streaming-disruption').addEventListener('click', async function() {
-            const button = this;
-            const scenarioSelect = document.getElementById('scenario-select');
-            const selectedScenario = scenarioSelect.value;
-            
-            button.disabled = true;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Streaming...';
-
-            try {
-                const response = await fetch(`/api/disruption/simulate-stream?scenario_id=${selectedScenario}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                
-                const result = await response.json();
-                
-                if (response.ok) {
-                    currentDisruptionId = result.disruption_id;
-                    addLog(`🧠 Streaming LLM analysis started: ${result.disruption_id}`, 'info');
-                    addLog(`🔴 LIVE: Watch for real-time LLM reasoning tokens below...`, 'analysis');
-                    loadDisruptions();
-                    monitorDisruption(result.disruption_id);
-                } else {
-                    addLog(`Error: ${result.detail}`, 'error');
-                }
-            } catch (error) {
-                addLog(`Error: ${error.message}`, 'error');
-            } finally {
-                button.disabled = false;
-                button.innerHTML = '<i class="fas fa-brain"></i> Streaming LLM Analysis';
-            }
         });
 
         // Start day simulation
         document.getElementById('start-day-simulation').addEventListener('click', async function() {
             const button = this;
+            
             button.disabled = true;
             button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting...';
 
@@ -415,23 +228,21 @@
                 
                 if (response.ok) {
                     currentSimulationId = result.simulation_id;
-                    addLog(`Day simulation started: ${result.simulation_id}`, 'success');
-                    button.innerHTML = '<i class="fas fa-stop"></i> Simulation Running';
-                    button.classList.remove('btn-success');
-                    button.classList.add('btn-danger');
+                    addLog(`Day simulation started: ${result.simulation_id}`, 'info');
+                    loadSimulations();
+                    monitorSimulation(result.simulation_id);
                 } else {
                     addLog(`Error: ${result.detail}`, 'error');
-                    button.disabled = false;
-                    button.innerHTML = '<i class="fas fa-calendar-day"></i> Start Day Simulation';
                 }
             } catch (error) {
                 addLog(`Error: ${error.message}`, 'error');
+            } finally {
                 button.disabled = false;
                 button.innerHTML = '<i class="fas fa-calendar-day"></i> Start Day Simulation';
             }
         });
 
-        // WebSocket connection
+        // WebSocket handling
         function connectWebSocket() {
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             const wsUrl = `${protocol}//${window.location.host}/ws`;
@@ -439,7 +250,8 @@
             websocket = new WebSocket(wsUrl);
             
             websocket.onopen = function(event) {
-                addLog('WebSocket connected - ready for real-time updates', 'info');
+                console.log('WebSocket connected');
+                addLog('Real-time monitoring connected', 'info');
             };
             
             websocket.onmessage = function(event) {
@@ -452,415 +264,183 @@
             };
             
             websocket.onclose = function(event) {
-                addLog('WebSocket disconnected', 'warning');
-                // Attempt to reconnect after 5 seconds
+                console.log('WebSocket disconnected');
+                addLog('Real-time monitoring disconnected', 'warning');
                 setTimeout(connectWebSocket, 5000);
             };
             
             websocket.onerror = function(error) {
                 console.error('WebSocket error:', error);
+                addLog('WebSocket connection error', 'error');
             };
         }
 
         // Handle WebSocket messages
         function handleWebSocketMessage(data) {
             if (data.type === 'simulation_event') {
-                handleSimulationEvent(data.event);
+                handleSimulationEvent(data);
             } else if (data.type === 'simulation_complete') {
                 handleSimulationComplete(data);
             } else if (data.type === 'simulation_error') {
                 handleSimulationError(data);
-            } else if (data.type === 'llm_reasoning') {
-                handleLLMReasoning(data);
-            } else if (data.type === 'disruption_complete') {
-                handleDisruptionComplete(data);
-            } else if (data.type === 'disruption_error') {
-                handleDisruptionError(data);
             }
-        }
-
-        // Handle LLM reasoning streams
-        function handleLLMReasoning(data) {
-            const event = data.event;
-            const disruptionId = data.disruption_id;
-            
-            if (event.type === 'token') {
-                // Stream individual tokens in real-time
-                appendLLMToken(disruptionId, event.content, event.section);
-            } else if (event.type === 'reasoning_step') {
-                addLog(`🧠 ${event.step.replace(/_/g, ' ').toUpperCase()}: ${event.content}`, 'analysis');
-            } else if (event.type === 'reasoning_complete') {
-                addLog(`✅ LLM Analysis Complete - Decision: ${event.decision?.substring(0, 100)}...`, 'resolution');
-            }
-        }
-        
-        // Handle disruption completion
-        function handleDisruptionComplete(data) {
-            addLog(`🎉 Streaming disruption analysis completed: ${data.message}`, 'success');
-            if (data.results && data.results.final_status) {
-                addLog(`📊 Final Status: ${data.results.final_status}`, 'resolution');
-            }
-        }
-        
-        // Handle disruption error
-        function handleDisruptionError(data) {
-            addLog(`❌ Disruption analysis error: ${data.error}`, 'error');
-        }
-        
-        // Track streaming tokens for each disruption
-        let streamingBuffers = new Map();
-        
-        function appendLLMToken(disruptionId, token, section) {
-            if (!streamingBuffers.has(disruptionId)) {
-                streamingBuffers.set(disruptionId, { 
-                    content: '', 
-                    section: '', 
-                    element: null,
-                    lastUpdate: Date.now()
-                });
-                
-                // Create a streaming display area
-                const streamElement = createStreamingElement(disruptionId);
-                streamingBuffers.get(disruptionId).element = streamElement;
-            }
-            
-            const buffer = streamingBuffers.get(disruptionId);
-            
-            // Add section header if new section
-            if (section && section !== buffer.section) {
-                buffer.section = section;
-                const sectionHeader = document.createElement('div');
-                sectionHeader.className = 'section-header mt-2';
-                sectionHeader.innerHTML = `<strong>📋 ${section.replace(/_/g, ' ').toUpperCase()}</strong>`;
-                buffer.element.appendChild(sectionHeader);
-            }
-            
-            // Append token with typing effect
-            const tokenSpan = document.createElement('span');
-            tokenSpan.textContent = token;
-            tokenSpan.className = 'token';
-            buffer.element.appendChild(tokenSpan);
-            
-            // Auto-scroll to latest content
-            const container = document.getElementById('logs-container');
-            container.scrollTop = container.scrollHeight;
-            
-            // Update buffer
-            buffer.content += token;
-            buffer.lastUpdate = Date.now();
-            
-            // Clean up old buffers (after 5 minutes)
-            if (Date.now() - buffer.lastUpdate > 300000) {
-                streamingBuffers.delete(disruptionId);
-            }
-        }
-        
-        function createStreamingElement(disruptionId) {
-            const container = document.getElementById('logs-container');
-            const timestamp = new Date().toLocaleTimeString();
-            
-            const streamEntry = document.createElement('div');
-            streamEntry.className = 'log-entry analysis';
-            streamEntry.setAttribute('data-type', 'analysis');
-            streamEntry.id = `stream_${disruptionId}`;
-            
-            streamEntry.innerHTML = `
-                <div class="log-timestamp">${timestamp}</div>
-                <div class="reasoning-section">
-                    <div class="reasoning-header">
-                        🤖 LIVE LLM REASONING - ${disruptionId}
-                        <span class="badge bg-info ms-2">STREAMING</span>
-                    </div>
-                    <div class="stream-content" style="font-family: monospace; line-height: 1.4; min-height: 50px; border: 1px solid #dee2e6; padding: 8px; border-radius: 4px; background: #f8f9fa;"></div>
-                </div>
-            `;
-            
-            container.appendChild(streamEntry);
-            return streamEntry.querySelector('.stream-content');
         }
 
         // Handle simulation events
-        function handleSimulationEvent(event) {
-            const timestamp = new Date().toLocaleTimeString();
-            let message = '';
+        function handleSimulationEvent(data) {
+            const event = data.event;
+            let logMessage = '';
             let logType = 'info';
-
+            
             switch (event.type) {
                 case 'time_update':
-                    message = `${event.message}`;
+                    logMessage = `⏰ ${event.message}`;
                     logType = 'info';
-                    updateSimulationTime(event.sim_time);
                     break;
                 case 'normal_operation':
-                    message = `NORMAL OPS: ${event.flight_id} (${event.origin} to ${event.destination}) - Departed on schedule`;
-                    logType = 'normal';
-                    break;
-                case 'disruption_detected':
-                    message = `DISRUPTION ALERT: ${event.flight_id} - ${event.description}`;
-                    logType = 'disruption';
-                    break;
-                case 'llm_crew_reasoning':
-                case 'llm_ops_reasoning':
-                    // Handle live LLM reasoning in simulation
-                    const llmEvent = event.llm_event;
-                    const streamId = `${event.flight_id}_${event.type}`;
-                    
-                    if (llmEvent.type === 'token') {
-                        appendLLMToken(streamId, llmEvent.content, llmEvent.section);
-                    } else if (llmEvent.type === 'reasoning_step') {
-                        addLog(`🧠 ${event.type.toUpperCase()}: ${llmEvent.step.replace(/_/g, ' ')}`, 'analysis');
-                    }
-                    return; // Don't add additional log message
-                case 'crew_analysis':
-                    if (event.llm_powered) {
-                        message = `✅ AI CREW ANALYSIS: ${event.flight_id} - LLM decision completed`;
-                        if (event.decision) {
-                            message += ` - ${event.decision.substring(0, 100)}...`;
-                        }
-                    } else {
-                        message = `CREW ANALYSIS: Evaluating ${event.flight_id} crew assignment options`;
-                        // Show detailed reasoning for non-LLM
-                        if (event.reasoning) {
-                            setTimeout(() => {
-                                addReasoningSection(event.reasoning, 'analysis');
-                            }, 500);
-                        }
-                    }
-                    logType = 'analysis';
-                    break;
-                case 'ops_support':
-                    if (event.llm_powered) {
-                        message = `✅ AI OPS SUPPORT: ${event.location} accommodation - LLM analysis completed`;
-                        if (event.decision) {
-                            message += ` - ${event.decision.substring(0, 100)}...`;
-                        }
-                    } else {
-                        message = `OPS SUPPORT: Processing crew accommodation at ${event.location}`;
-                        // Show detailed ops reasoning for non-LLM
-                        if (event.reasoning) {
-                            setTimeout(() => {
-                                addReasoningSection(event.reasoning, 'analysis');
-                            }, 500);
-                        }
-                    }
-                    logType = 'analysis';
-                    break;
-                case 'disruption_resolved':
-                    if (event.llm_powered) {
-                        message = `🎉 AI RESOLUTION: ${event.flight_id} - ${event.resolution}`;
-                    } else {
-                        message = `RESOLUTION: ${event.flight_id} - Multi-agent coordination completed successfully`;
-                    }
-                    logType = 'resolution';
-                    break;
-                case 'simulation_complete':
-                    message = `🎉 ${event.message}`;
+                    logMessage = `✅ ${event.flight_id} departed on time from ${event.origin} to ${event.destination}`;
                     logType = 'success';
                     break;
+                case 'disruption_detected':
+                    logMessage = `⚠️ DISRUPTION: ${event.flight_id} - ${event.description}`;
+                    logType = 'disruption';
+                    break;
+                case 'crew_analysis':
+                    logMessage = `👥 CREW ANALYSIS: ${event.flight_id} - ${event.reasoning}`;
+                    logType = 'crew_analysis';
+                    break;
+                case 'ops_support':
+                    logMessage = `🏨 OPS SUPPORT: ${event.flight_id} - ${event.reasoning}`;
+                    logType = 'crew_analysis';
+                    break;
+                case 'disruption_resolved':
+                    logMessage = `✅ RESOLVED: ${event.flight_id} - ${event.resolution}`;
+                    logType = 'resolution';
+                    break;
+                case 'llm_crew_reasoning':
+                    if (event.llm_event && event.llm_event.type === 'token') {
+                        return;
+                    }
+                    logMessage = `🤖 CREW LLM: ${event.flight_id} - Live reasoning in progress`;
+                    logType = 'crew_analysis';
+                    break;
+                case 'llm_ops_reasoning':
+                    if (event.llm_event && event.llm_event.type === 'token') {
+                        return;
+                    }
+                    logMessage = `🤖 OPS LLM: ${event.flight_id} - Live reasoning in progress`;
+                    logType = 'crew_analysis';
+                    break;
+                default:
+                    logMessage = `📋 ${event.type}: ${JSON.stringify(event)}`;
+                    logType = 'info';
             }
-
-            if (message) {
-                addLog(message, logType);
-            }
+            
+            addLog(logMessage, logType);
+            loadSimulations();
         }
 
         // Handle simulation completion
         function handleSimulationComplete(data) {
-            addLog('Day simulation completed successfully! 🎉', 'success');
-            
-            const button = document.getElementById('start-day-simulation');
-            button.disabled = false;
-            button.innerHTML = '<i class="fas fa-calendar-day"></i> Start Day Simulation';
-            button.classList.remove('btn-danger');
-            button.classList.add('btn-success');
-            
+            addLog(`🎉 Day simulation completed: ${data.simulation_id}`, 'success');
             currentSimulationId = null;
+            loadSimulations();
         }
 
         // Handle simulation error
         function handleSimulationError(data) {
-            addLog(`Simulation error: ${data.error}`, 'error');
-            
-            const button = document.getElementById('start-day-simulation');
-            button.disabled = false;
-            button.innerHTML = '<i class="fas fa-calendar-day"></i> Start Day Simulation';
-            button.classList.remove('btn-danger');
-            button.classList.add('btn-success');
-            
+            addLog(`❌ Simulation error: ${data.error}`, 'error');
             currentSimulationId = null;
+            loadSimulations();
         }
 
-        // Update simulation time display
-        function updateSimulationTime(simTime) {
-            const time = new Date(simTime);
-            const timeStr = time.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            
-            // Update a time display if we add one to the UI
-            const timeDisplay = document.getElementById('simulation-time');
-            if (timeDisplay) {
-                timeDisplay.textContent = `Sim Time: ${timeStr}`;
-            }
-        }
-
-        // Monitor disruption status
-        async function monitorDisruption(disruptionId) {
-            const checkStatus = async () => {
+        // Monitor simulation status
+        async function monitorSimulation(simulationId) {
+            while (currentSimulationId === simulationId) {
                 try {
-                    const response = await fetch(`/api/disruption/${disruptionId}`);
+                    const response = await fetch(`/api/simulation/${simulationId}`);
                     const data = await response.json();
                     
                     if (data.status === 'completed') {
-                        addLog(`Disruption ${disruptionId} completed with status: ${data.final_status}`, 'success');
-                        loadDisruptions();
-                        return;
+                        addLog(`Simulation ${simulationId} completed successfully`, 'success');
+                        loadSimulations();
+                        currentSimulationId = null;
+                        break;
                     } else if (data.status === 'failed') {
-                        addLog(`Disruption ${disruptionId} failed: ${data.error}`, 'error');
-                        loadDisruptions();
-                        return;
+                        addLog(`Simulation ${simulationId} failed: ${data.error}`, 'error');
+                        loadSimulations();
+                        currentSimulationId = null;
+                        break;
                     }
                     
-                    // Continue monitoring
-                    setTimeout(checkStatus, 2000);
+                    await new Promise(resolve => setTimeout(resolve, 2000));
                 } catch (error) {
-                    addLog(`Error monitoring disruption: ${error.message}`, 'error');
+                    addLog(`Error monitoring simulation: ${error.message}`, 'error');
+                    break;
                 }
-            };
-            
-            checkStatus();
-        }
-
-        // Load disruptions
-        async function loadDisruptions() {
-            try {
-                const response = await fetch('/api/disruptions');
-                const data = await response.json();
-                
-                const container = document.getElementById('disruptions-list');
-                
-                if (data.disruptions.length === 0) {
-                    container.innerHTML = `
-                        <div class="text-center text-muted py-4">
-                            <i class="fas fa-info-circle"></i>
-                            <p>No disruptions to display. Click "Simulate Disruption" to get started.</p>
-                        </div>
-                    `;
-                    return;
-                }
-                
-                container.innerHTML = data.disruptions.map(disruption => `
-                    <div class="card mb-2">
-                        <div class="card-body p-3">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <h6 class="mb-1">${disruption.flight_id || 'N/A'}</h6>
-                                    <p class="text-muted mb-1">${disruption.description}</p>
-                                    <small class="text-muted">${new Date(disruption.timestamp).toLocaleString()}</small>
-                                </div>
-                                <span class="badge bg-${getStatusColor(disruption.status)} ${disruption.status === 'processing' ? 'processing' : ''}">
-                                    ${disruption.status}
-                                </span>
-                            </div>
-                            ${disruption.final_status ? `
-                                <div class="mt-2">
-                                    <small><strong>Final Status:</strong> ${disruption.final_status}</small>
-                                </div>
-                            ` : ''}
-                        </div>
-                    </div>
-                `).join('');
-                
-                // Update metrics
-                document.getElementById('total-disruptions').textContent = data.total;
-                document.getElementById('active-requests').textContent = data.active;
-                
-            } catch (error) {
-                addLog(`Error loading disruptions: ${error.message}`, 'error');
             }
         }
 
-        // Get status color
+        // Load simulations
+        async function loadSimulations() {
+            try {
+                const response = await fetch('/api/simulations');
+                const data = await response.json();
+                
+                const container = document.getElementById('simulations-list');
+                
+                if (data.simulations.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-info-circle"></i>
+                            <p>No simulations running. Click "Start Day Simulation" to begin.</p>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = data.simulations.map(simulation => `
+                        <div class="border rounded p-3 mb-2">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">Simulation ${simulation.simulation_id.substring(0, 8)}</h6>
+                                    <p class="text-muted mb-1">${simulation.type || 'Day Simulation'}</p>
+                                    <small class="text-muted">${new Date(simulation.start_time).toLocaleString()}</small>
+                                </div>
+                                <span class="badge bg-${getStatusColor(simulation.status)} ${simulation.status === 'running' ? 'processing' : ''}">
+                                    ${simulation.status}
+                                </span>
+                            </div>
+                            ${simulation.end_time ? `
+                                <div class="mt-2 pt-2 border-top">
+                                    <small><strong>Completed:</strong> ${new Date(simulation.end_time).toLocaleString()}</small>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `).join('');
+                }
+                
+                // Update metrics
+                document.getElementById('active-simulations').textContent = data.active;
+                document.getElementById('total-simulations').textContent = data.total;
+                
+            } catch (error) {
+                console.error('Error loading simulations:', error);
+                addLog(`Error loading simulations: ${error.message}`, 'error');
+            }
+        }
+
+        // Utility functions
         function getStatusColor(status) {
             switch (status) {
+                case 'running': return 'primary';
                 case 'completed': return 'success';
-                case 'processing': return 'warning';
                 case 'failed': return 'danger';
+                case 'processing': return 'warning';
                 default: return 'secondary';
             }
         }
 
-        // Check system health
-        async function checkSystemHealth() {
-            try {
-                const response = await fetch('/api/health');
-                const data = await response.json();
-                
-                const statusElement = document.getElementById('system-status');
-                statusElement.innerHTML = `<span class="badge bg-${data.status === 'healthy' ? 'success' : 'danger'}">${data.status}</span>`;
-                
-            } catch (error) {
-                document.getElementById('system-status').innerHTML = '<span class="badge bg-danger">Error</span>';
-                addLog(`Health check failed: ${error.message}`, 'error');
-            }
-        }
-
-        // Show configuration
-        async function showConfig() {
-            try {
-                const response = await fetch('/api/config');
-                const config = await response.json();
-                
-                document.getElementById('config-content').innerHTML = `
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6>RAG Configuration</h6>
-                            <ul class="list-unstyled">
-                                <li><strong>Model:</strong> ${config.rag.embedding_model}</li>
-                                <li><strong>Threshold:</strong> ${config.rag.confidence_threshold}</li>
-                            </ul>
-                        </div>
-                        <div class="col-md-6">
-                            <h6>OpenAI Configuration</h6>
-                            <ul class="list-unstyled">
-                                <li><strong>Model:</strong> ${config.openai.model}</li>
-                                <li><strong>Max Tokens:</strong> ${config.openai.max_tokens}</li>
-                                <li><strong>Temperature:</strong> ${config.openai.temperature}</li>
-                                <li><strong>API Key:</strong> ${config.openai.api_key_configured ? 'Configured' : 'Not Set'}</li>
-                            </ul>
-                        </div>
-                    </div>
-                `;
-                
-                new bootstrap.Modal(document.getElementById('configModal')).show();
-            } catch (error) {
-                addLog(`Error loading config: ${error.message}`, 'error');
-            }
-        }
-
-        // Show policies
-        async function showPolicies() {
-            try {
-                const response = await fetch('/api/policies');
-                const data = await response.json();
-                
-                document.getElementById('policies-content').innerHTML = data.policies.map(policy => `
-                    <div class="card mb-2">
-                        <div class="card-body">
-                            <h6>${policy.title}</h6>
-                            <p class="text-muted mb-0">${policy.text}</p>
-                            <small class="text-muted">ID: ${policy.id}</small>
-                        </div>
-                    </div>
-                `).join('');
-                
-                new bootstrap.Modal(document.getElementById('policiesModal')).show();
-            } catch (error) {
-                addLog(`Error loading policies: ${error.message}`, 'error');
-            }
-        }
-
-        // Add log entry with professional formatting
-        function addLog(message, type = 'info') {
-            const container = document.getElementById('logs-container');
+        function addLog(message, type) {
+            const container = document.getElementById('operations-log');
             const timestamp = new Date().toLocaleTimeString();
             
             const logEntry = document.createElement('div');
@@ -881,30 +461,8 @@
             }
         }
 
-        // Add reasoning section with professional formatting
-        function addReasoningSection(reasoning, type) {
-            const container = document.getElementById('logs-container');
-            const timestamp = new Date().toLocaleTimeString();
-            
-            const reasoningEntry = document.createElement('div');
-            reasoningEntry.className = `log-entry ${type}`;
-            reasoningEntry.setAttribute('data-type', type);
-            
-            reasoningEntry.innerHTML = `
-                <div class="log-timestamp">${timestamp}</div>
-                <div class="reasoning-section">
-                    <div class="reasoning-header">DETAILED ANALYSIS</div>
-                    <div class="log-content">${reasoning}</div>
-                </div>
-            `;
-            
-            container.appendChild(reasoningEntry);
-            container.scrollTop = container.scrollHeight;
-        }
-
-        // Log filtering functionality
         function filterLogs(filterType) {
-            const container = document.getElementById('logs-container');
+            const container = document.getElementById('operations-log');
             const entries = container.querySelectorAll('.log-entry');
             
             // Update button states
@@ -920,7 +478,7 @@
                     const entryType = entry.getAttribute('data-type');
                     if (filterType === 'disruptions' && entryType === 'disruption') {
                         entry.style.display = 'block';
-                    } else if (filterType === 'analysis' && entryType === 'analysis') {
+                    } else if (filterType === 'crew_analysis' && entryType === 'crew_analysis') {
                         entry.style.display = 'block';
                     } else if (filterType === 'resolutions' && entryType === 'resolution') {
                         entry.style.display = 'block';
@@ -931,36 +489,50 @@
             });
         }
 
-        // Fullscreen toggle
         function toggleFullscreen() {
-            const container = document.getElementById('logs-container');
-            const button = event.target.closest('button');
-            
-            if (container.classList.contains('fullscreen')) {
-                container.classList.remove('fullscreen');
-                button.innerHTML = '<i class="fas fa-expand"></i>';
-            } else {
-                container.classList.add('fullscreen');
-                button.innerHTML = '<i class="fas fa-compress"></i>';
+            const container = document.getElementById('operations-log');
+            container.classList.toggle('fullscreen');
+        }
+
+        function refreshDashboard() {
+            location.reload();
+        }
+
+        function showConfig() {
+            fetch('/api/config')
+                .then(response => response.json())
+                .then(data => {
+                    alert('System Configuration:\n' + JSON.stringify(data, null, 2));
+                })
+                .catch(error => {
+                    addLog(`Error loading config: ${error.message}`, 'error');
+                });
+        }
+
+        async function checkSystemHealth() {
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                
+                const statusElement = document.getElementById('system-status');
+                if (data.status === 'healthy') {
+                    statusElement.innerHTML = '<span class="badge bg-success">Healthy</span>';
+                } else {
+                    statusElement.innerHTML = '<span class="badge bg-danger">Unhealthy</span>';
+                }
+            } catch (error) {
+                document.getElementById('system-status').innerHTML = '<span class="badge bg-danger">Error</span>';
             }
         }
 
-        // Refresh dashboard
-        function refreshDashboard() {
-            checkSystemHealth();
-            loadDisruptions();
-            addLog('Dashboard refreshed', 'info');
-        }
-
-        // Auto refresh
         function startAutoRefresh() {
             refreshInterval = setInterval(() => {
+                loadSimulations();
                 checkSystemHealth();
-                loadDisruptions();
             }, 10000); // Refresh every 10 seconds
         }
 
-        // Stop auto refresh when page is hidden
+        // Handle page visibility changes
         document.addEventListener('visibilitychange', function() {
             if (document.hidden) {
                 clearInterval(refreshInterval);
