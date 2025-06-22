@@ -13,7 +13,7 @@ load_dotenv()
 class OpenAIConfig:
     """OpenAI API configuration"""
     api_key: str
-    model: str = "gpt-4"
+    model: str = "gpt-4o-mini"
     max_tokens: int = 256
     temperature: float = 0.2
     stream: bool = True
@@ -54,7 +54,7 @@ class Config:
     def __init__(self):
         self.openai = OpenAIConfig(
             api_key=os.getenv('OPENAI_API_KEY', ''),
-            model=os.getenv('OPENAI_MODEL', 'gpt-4'),
+            model=os.getenv('OPENAI_MODEL', 'gpt-4o-mini'),
             max_tokens=int(os.getenv('OPENAI_MAX_TOKENS', '256')),
             temperature=float(os.getenv('OPENAI_TEMPERATURE', '0.2')),
             stream=os.getenv('OPENAI_STREAM', 'true').lower() == 'true',
