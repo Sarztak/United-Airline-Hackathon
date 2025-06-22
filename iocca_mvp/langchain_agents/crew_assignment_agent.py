@@ -2,11 +2,8 @@
 LangChain-based Crew Assignment Agent
 """
 from typing import Dict, Any, List
-from langchain.agents import AgentExecutor, create_openai_functions_agent
-from langchain.tools import Tool
+from langchain.agents import initialize_agent, Tool, AgentType
 from langchain_openai import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
-from langchain.schema import SystemMessage, HumanMessage
 import pandas as pd
 from datetime import datetime
 
@@ -32,48 +29,27 @@ class CrewAssignmentAgent:
         self.tools = [
             Tool(
                 name="check_crew_legality",
-                description="Check if crew duty times are legal for a flight",
+                description="Check if crew duty times are legal for a flight. Expects JSON input with flight_id.",
                 func=self._check_crew_legality_tool
             ),
             Tool(
                 name="find_spare_crew",
-                description="Find available spare crew members",
+                description="Find available spare crew members. Expects JSON input with location.",
                 func=self._find_spare_crew_tool
             ),
             Tool(
                 name="find_repositioning",
-                description="Find repositioning flights for crew",
+                description="Find repositioning flights for crew. Expects JSON input with from_location and to_location.",
                 func=self._find_repositioning_tool
             )
         ]
         
-        # Create the agent prompt
-        self.prompt = ChatPromptTemplate.from_messages([
-            SystemMessage(content="""You are a Crew Assignment Agent for United Airlines.
-
-Your responsibilities:
-1. Monitor crew duty time compliance
-2. Find spare crew when needed
-3. Arrange crew repositioning
-4. Make real-time crew assignment decisions
-
-When given a flight disruption:
-1. First check if assigned crew are still legal
-2. If not legal, find spare crew
-3. If spare crew need repositioning, arrange it
-4. Escalate to policy if all options fail
-
-Always explain your reasoning step by step and provide clear recommendations."""),
-            HumanMessage(content="{input}")
-        ])
-        
-        # Create the agent
-        self.agent = create_openai_functions_agent(self.llm, self.tools, self.prompt)
-        self.agent_executor = AgentExecutor(
-            agent=self.agent,
+        # Create the agent using the simpler initialize_agent approach
+        self.agent_executor = initialize_agent(
             tools=self.tools,
-            verbose=True,
-            max_iterations=5
+            llm=self.llm,
+            agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+            verbose=True
         )
         
         # Store context data
@@ -132,10 +108,21 @@ Always explain your reasoning step by step and provide clear recommendations."""
             logger.log_agent_error("crew_assignment_disruption", e, {"flight_id": flight_id})
             return error_response
     
-    def _check_crew_legality_tool(self, flight_id: str) -> str:
+    def _check_crew_legality_tool(self, action_input: str) -> str:
         """Tool function to check crew legality"""
+        import json
+        
+        try:
+            params = json.loads(action_input)
+        except json.JSONDecodeError:
+            return json.dumps({"error": "Invalid JSON input format"})
+        
+        flight_id = params.get("flight_id")
+        if not flight_id:
+            return json.dumps({"error": "Missing flight_id parameter"})
+        
         if self.crew_roster_df is None or self.flight_schedule_df is None:
-            return "Error: No crew or flight data available"
+            return json.dumps({"error": "No crew or flight data available"})
         
         try:
             flight = self.flight_schedule_df[self.flight_schedule_df["flight_id"] == flight_id].iloc[0]
@@ -158,29 +145,60 @@ Always explain your reasoning step by step and provide clear recommendations."""
                 else:
                     illegal_crew.append(f"{crew['crew_id']}: {result['reason']}")
             
-            return f"Legal crew: {legal_crew}. Illegal crew: {illegal_crew}"
+            return json.dumps({
+                "legal_crew": legal_crew,
+                "illegal_crew": illegal_crew,
+                "message": f"Legal crew: {legal_crew}. Illegal crew: {illegal_crew}"
+            })
             
         except Exception as e:
-            return f"Error checking crew legality: {str(e)}"
+            return json.dumps({"error": f"Error checking crew legality: {str(e)}"})
     
-    def _find_spare_crew_tool(self, location: str) -> str:
+    def _find_spare_crew_tool(self, action_input: str) -> str:
         """Tool function to find spare crew"""
+        import json
+        
+        try:
+            params = json.loads(action_input)
+        except json.JSONDecodeError:
+            return json.dumps({"error": "Invalid JSON input format"})
+        
+        location = params.get("location")
+        if not location:
+            return json.dumps({"error": "Missing location parameter"})
+        
         if self.crew_roster_df is None:
-            return "Error: No crew data available"
+            return json.dumps({"error": "No crew data available"})
         
         try:
             spare = find_spares(current_flight=None, crew_df=self.crew_roster_df)
             if spare:
-                return f"Found spare crew: {spare['crew_id']} at {spare['base']}"
+                return json.dumps({
+                    "spare_crew": spare,
+                    "message": f"Found spare crew: {spare['crew_id']} at {spare['base']}"
+                })
             else:
-                return "No spare crew available"
+                return json.dumps({"message": "No spare crew available"})
         except Exception as e:
-            return f"Error finding spare crew: {str(e)}"
+            return json.dumps({"error": f"Error finding spare crew: {str(e)}"})
     
-    def _find_repositioning_tool(self, from_location: str, to_location: str) -> str:
+    def _find_repositioning_tool(self, action_input: str) -> str:
         """Tool function to find repositioning flights"""
+        import json
+        
+        try:
+            params = json.loads(action_input)
+        except json.JSONDecodeError:
+            return json.dumps({"error": "Invalid JSON input format"})
+        
+        from_location = params.get("from_location")
+        to_location = params.get("to_location")
+        
+        if not from_location or not to_location:
+            return json.dumps({"error": "Missing from_location or to_location parameters"})
+        
         if self.repositioning_flights_df is None:
-            return "Error: No repositioning flight data available"
+            return json.dumps({"error": "No repositioning flight data available"})
         
         try:
             options = reposition_flight_finder(
@@ -191,9 +209,14 @@ Always explain your reasoning step by step and provide clear recommendations."""
             
             if options:
                 flight_info = [f"{opt['flight_id']} ({opt['sched_dep']} - {opt['sched_arr']})" for opt in options]
-                return f"Repositioning options: {', '.join(flight_info)}"
+                return json.dumps({
+                    "repositioning_flights": options,
+                    "message": f"Repositioning options: {', '.join(flight_info)}"
+                })
             else:
-                return f"No repositioning flights available from {from_location} to {to_location}"
+                return json.dumps({
+                    "message": f"No repositioning flights available from {from_location} to {to_location}"
+                })
                 
         except Exception as e:
-            return f"Error finding repositioning flights: {str(e)}"
+            return json.dumps({"error": f"Error finding repositioning flights: {str(e)}"})

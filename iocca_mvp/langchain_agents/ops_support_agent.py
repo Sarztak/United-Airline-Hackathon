@@ -2,11 +2,8 @@
 LangChain-based Operations Support Agent
 """
 from typing import Dict, Any
-from langchain.agents import AgentExecutor, create_openai_functions_agent
-from langchain.tools import Tool
+from langchain.agents import initialize_agent, Tool, AgentType
 from langchain_openai import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
-from langchain.schema import SystemMessage, HumanMessage
 import pandas as pd
 from datetime import datetime
 
@@ -30,43 +27,22 @@ class OpsupportAgent:
         self.tools = [
             Tool(
                 name="book_crew_hotel",
-                description="Book hotel accommodation for crew members",
+                description="Book hotel accommodation for crew members. Expects JSON input with crew_id and location.",
                 func=self._book_hotel_tool
             ),
             Tool(
                 name="check_hotel_availability",
-                description="Check hotel availability at a location",
+                description="Check hotel availability at a location. Expects JSON input with location.",
                 func=self._check_hotel_availability_tool
             )
         ]
         
-        # Create the agent prompt
-        self.prompt = ChatPromptTemplate.from_messages([
-            SystemMessage(content="""You are an Operations Support Agent for United Airlines.
-
-Your responsibilities:
-1. Book hotels for stranded or repositioned crew
-2. Arrange alternative accommodations when hotels are full
-3. Coordinate crew logistics during disruptions
-4. Ensure crew have proper rest facilities
-
-When crew need accommodation:
-1. First try to book at preferred crew hotels
-2. If unavailable, find alternative accommodations
-3. Consider crew rest requirements and transportation
-4. Escalate if no suitable options available
-
-Always prioritize crew safety and rest requirements."""),
-            HumanMessage(content="{input}")
-        ])
-        
-        # Create the agent
-        self.agent = create_openai_functions_agent(self.llm, self.tools, self.prompt)
-        self.agent_executor = AgentExecutor(
-            agent=self.agent,
+        # Create the agent using the simpler initialize_agent approach
+        self.agent_executor = initialize_agent(
             tools=self.tools,
-            verbose=True,
-            max_iterations=5
+            llm=self.llm,
+            agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+            verbose=True
         )
         
         # Store context data
@@ -120,26 +96,58 @@ Always prioritize crew safety and rest requirements."""),
             logger.log_agent_error("ops_support_request", e, {"crew_id": crew_id})
             return error_response
     
-    def _book_hotel_tool(self, crew_id: str, location: str) -> str:
+    def _book_hotel_tool(self, action_input: str) -> str:
         """Tool function to book hotel"""
+        import json
+        
+        try:
+            params = json.loads(action_input)
+        except json.JSONDecodeError:
+            return json.dumps({"error": "Invalid JSON input format"})
+        
+        crew_id = params.get("crew_id")
+        location = params.get("location")
+        
+        if not crew_id or not location:
+            return json.dumps({"error": "Missing crew_id or location parameters"})
+        
         if self.hotel_inventory_df is None:
-            return "Error: No hotel inventory data available"
+            return json.dumps({"error": "No hotel inventory data available"})
         
         try:
             result = book_hotel(location, crew_id, self.hotel_inventory_df)
             
             if result["success"]:
-                return f"Hotel booked successfully: {result['hotel_name']} (Confirmation: {result['confirmation']})"
+                return json.dumps({
+                    "success": True,
+                    "hotel_name": result["hotel_name"],
+                    "confirmation": result["confirmation"],
+                    "message": f"Hotel booked successfully: {result['hotel_name']} (Confirmation: {result['confirmation']})"
+                })
             else:
-                return f"Hotel booking failed: {result['failure_reason']}"
+                return json.dumps({
+                    "success": False,
+                    "message": f"Hotel booking failed: {result['failure_reason']}"
+                })
                 
         except Exception as e:
-            return f"Error booking hotel: {str(e)}"
+            return json.dumps({"error": f"Error booking hotel: {str(e)}"})
     
-    def _check_hotel_availability_tool(self, location: str) -> str:
+    def _check_hotel_availability_tool(self, action_input: str) -> str:
         """Tool function to check hotel availability"""
+        import json
+        
+        try:
+            params = json.loads(action_input)
+        except json.JSONDecodeError:
+            return json.dumps({"error": "Invalid JSON input format"})
+        
+        location = params.get("location")
+        if not location:
+            return json.dumps({"error": "Missing location parameter"})
+        
         if self.hotel_inventory_df is None:
-            return "Error: No hotel inventory data available"
+            return json.dumps({"error": "No hotel inventory data available"})
         
         try:
             available_hotels = self.hotel_inventory_df[
@@ -148,12 +156,20 @@ Always prioritize crew safety and rest requirements."""),
             ]
             
             if available_hotels.empty:
-                return f"No hotels available at {location}"
+                return json.dumps({"message": f"No hotels available at {location}"})
             else:
                 hotel_list = []
+                hotels_data = []
                 for _, hotel in available_hotels.iterrows():
                     hotel_list.append(f"{hotel['name']} ({hotel['available_rooms']} rooms)")
-                return f"Available hotels at {location}: {', '.join(hotel_list)}"
+                    hotels_data.append({
+                        "name": hotel['name'],
+                        "available_rooms": hotel['available_rooms']
+                    })
+                return json.dumps({
+                    "available_hotels": hotels_data,
+                    "message": f"Available hotels at {location}: {', '.join(hotel_list)}"
+                })
                 
         except Exception as e:
-            return f"Error checking hotel availability: {str(e)}"
+            return json.dumps({"error": f"Error checking hotel availability: {str(e)}"})
