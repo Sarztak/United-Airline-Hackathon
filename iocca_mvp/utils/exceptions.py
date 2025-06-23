@@ -1,16 +1,16 @@
 """
-Custom exceptions for IOCCA MVP
+Custom exceptions for UCI MVP
 """
 
-class IOCCAException(Exception):
-    """Base exception for IOCCA application"""
+class UCIException(Exception):
+    """Base exception for UCI application"""
     def __init__(self, message: str, error_code: str = None, context: dict = None):
         super().__init__(message)
         self.message = message
         self.error_code = error_code or "GENERIC_ERROR"
         self.context = context or {}
 
-class AgentException(IOCCAException):
+class AgentException(UCIException):
     """Exception raised by agents"""
     pass
 
@@ -22,22 +22,22 @@ class OpsupportException(AgentException):
     """Exception related to operational support"""
     pass
 
-class PolicyException(IOCCAException):
+class PolicyException(UCIException):
     """Exception related to policy operations"""
     pass
 
-class ConfigurationException(IOCCAException):
+class ConfigurationException(UCIException):
     """Exception related to configuration issues"""
     pass
 
-class DataValidationException(IOCCAException):
+class DataValidationException(UCIException):
     """Exception raised when data validation fails"""
     pass
 
-class ExternalAPIException(IOCCAException):
+class ExternalAPIException(UCIException):
     """Exception raised when external API calls fail"""
     pass
 
-class DatabaseException(IOCCAException):
+class DatabaseException(UCIException):
     """Exception related to database operations"""
     pass

@@ -1,5 +1,5 @@
 """
-Data models and validation schemas for IOCCA MVP
+Data models and validation schemas for UCI MVP
 """
 from typing import List, Optional, Dict, Any
 from datetime import datetime

@@ -1,5 +1,5 @@
 """
-Utility modules for IOCCA MVP
+Utility modules for UCI MVP
 """
 from .logger import logger, get_agent_logger, AgentLogger
 

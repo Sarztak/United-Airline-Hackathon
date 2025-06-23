@@ -1,5 +1,5 @@
 """
-FastAPI web interface for IOCCA MVP
+FastAPI web interface for UCI MVP
 """
 from fastapi import FastAPI, HTTPException, BackgroundTasks, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -42,8 +42,8 @@ except ImportError:
 
 # Initialize FastAPI app
 app = FastAPI(
-    title="IOCCA MVP - Airline Operations Multi-Agent System",
-    description="Intelligent Operations Control Center Assistant",
+    title="UCI MVP - Airline Operations Multi-Agent System",
+    description="United Crew Intelligence",
     version="1.0.0"
 )
 
@@ -79,7 +79,7 @@ async def dashboard(request: Request):
     """Main dashboard page"""
     return templates.TemplateResponse("dashboard.html", {
         "request": request,
-        "title": "IOCCA MVP - Day Simulation",
+        "title": "UCI MVP - Day Simulation",
         "active_simulations": len([s for s in active_simulations.values() if s["status"] == "running"]),
         "total_simulations": len(active_simulations)
     })

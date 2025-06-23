@@ -1,12 +1,12 @@
-# IOCCA MVP - Intelligent Operations Control Center Assistant
+# UCI MVP - United Crew Intelligence
 
 🚀 **A Multi-Agent System for Crew Disruption and Recovery**
 
-Built for the United Airlines Hackathon, IOCCA MVP demonstrates an intelligent multi-agent system that monitors, plans, and reassigns disrupted crew in real-time using AI, RAG (Retrieval-Augmented Generation), and sophisticated orchestration.
+Built for the United Airlines Hackathon, UCI MVP demonstrates an intelligent multi-agent system that monitors, plans, and reassigns disrupted crew in real-time using AI, RAG (Retrieval-Augmented Generation), and sophisticated orchestration.
 
 ## 🎯 Overview
 
-IOCCA MVP is a sophisticated airline operations management system that uses multiple specialized AI agents to handle flight disruptions automatically. The system combines rule-based logic, semantic search over airline policies, and LLM-powered decision making to provide comprehensive disruption resolution.
+UCI MVP is a sophisticated airline operations management system that uses multiple specialized AI agents to handle flight disruptions automatically. The system combines rule-based logic, semantic search over airline policies, and LLM-powered decision making to provide comprehensive disruption resolution.
 
 ### Key Features
 

@@ -1,3 +1,3 @@
 """
-Unit tests for IOCCA MVP
+Unit tests for UCI MVP
 """

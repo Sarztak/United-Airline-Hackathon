@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-IOCCA MVP Runner Script
+UCI MVP Runner Script
 Provides easy ways to run different parts of the system
 """
 import argparse
@@ -11,7 +11,7 @@ from config import config
 
 def run_web_server():
     """Run the web server"""
-    print("Starting IOCCA MVP Web Server...")
+    print("Starting UCI MVP Web Server...")
     print(f"Server will be available at: http://{config.app.host}:{config.app.port}")
     
     try:
@@ -103,7 +103,7 @@ def setup_environment():
 def show_help():
     """Show help information"""
     print("""
-IOCCA MVP - Intelligent Operations Control Center Assistant
+UCI MVP - United Crew Intelligence
 
 Available commands:
 
@@ -128,7 +128,7 @@ For more information, see README.md
 
 def main():
     parser = argparse.ArgumentParser(
-        description="IOCCA MVP Runner",
+        description="UCI MVP Runner",
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     
@@ -144,7 +144,7 @@ def main():
     
     args = parser.parse_args()
     
-    print("IOCCA MVP - Crew Disruption and Recovery System")
+    print("UCI MVP - Crew Disruption and Recovery System")
     print("=" * 60)
     
     try:

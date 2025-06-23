@@ -1,5 +1,5 @@
 """
-Data models for IOCCA MVP
+Data models for UCI MVP
 """
 from .schemas import (
     CrewMember, Flight, Hotel, RepositioningFlight, DutyRules, Disruption,

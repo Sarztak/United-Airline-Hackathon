@@ -1,5 +1,5 @@
 """
-Configuration management for IOCCA MVP
+Configuration management for UCI MVP
 """
 import os
 from typing import Optional

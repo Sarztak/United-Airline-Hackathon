@@ -1,5 +1,5 @@
 /**
- * IOCCA MVP - Live LLM Streaming Client
+ * UCI MVP - Live LLM Streaming Client
  * Handles real-time token streaming and reasoning display
  */
 

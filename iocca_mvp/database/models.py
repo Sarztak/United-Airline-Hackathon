@@ -1,5 +1,5 @@
 """
-Database models for IOCCA MVP
+Database models for UCI MVP
 """
 from sqlalchemy import create_engine, Column, String, Integer, Float, Boolean, DateTime, Text
 from sqlalchemy.ext.declarative import declarative_base

@@ -1,5 +1,5 @@
 """
-Database package for IOCCA MVP
+Database package for UCI MVP
 """
 from .models import (
     DisruptionRecord, AgentPerformance, PolicyUsage,

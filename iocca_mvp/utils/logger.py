@@ -1,5 +1,5 @@
 """
-Structured logging system for IOCCA MVP
+Structured logging system for UCI MVP
 """
 import logging
 import sys
