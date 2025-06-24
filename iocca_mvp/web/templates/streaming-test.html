@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Streaming Test - IOCCA MVP</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/static/streaming.css" rel="stylesheet">
+    <style>
+        body { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .header-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            padding: 2rem;
+            color: white;
+            text-align: center;
+        }
+        
+        .main-container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        
+        .test-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Header -->
+        <div class="header-section">
+            <h1><i class="fas fa-brain"></i> LLM Streaming Test Interface</h1>
+            <p class="lead mb-0">Real-time token streaming and reasoning visualization for IOCCA MVP</p>
+            <div class="mt-3">
+                <div id="connection-status" class="connection-status disconnected">🔴 Connecting...</div>
+            </div>
+        </div>
+
+        <!-- Test Controls -->
+        <div class="test-section">
+            <div class="test-interface">
+                <h3><i class="fas fa-flask"></i> LLM Streaming Test</h3>
+                
+                <div class="row">
+                    <div class="col-md-8">
+                        <textarea 
+                            id="query-input" 
+                            class="query-input" 
+                            rows="3" 
+                            placeholder="Enter your test query (e.g., 'Analyze a crew duty time violation for Flight UA123')"
+                        >Analyze a crew duty time violation scenario where Flight UA456 from LAX to JFK is delayed 4 hours due to mechanical issues, and the current crew would exceed FAA Part 117 duty time limits.</textarea>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="streaming-controls">
+                            <button id="test-streaming-btn" class="streaming-btn primary">
+                                <i class="fas fa-play"></i> Start LLM Test
+                            </button>
+                            <button id="clear-streams-btn" class="streaming-btn secondary">
+                                <i class="fas fa-trash"></i> Clear
+                            </button>
+                            <button id="day-simulation-btn" class="streaming-btn primary">
+                                <i class="fas fa-calendar-day"></i> Day Simulation
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <h6>Quick Test Queries:</h6>
+                        <div class="btn-group-vertical d-grid gap-1">
+                            <button class="btn btn-outline-secondary btn-sm" onclick="setQuery('crew_duty')">
+                                Crew Duty Time Analysis
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="setQuery('hotel_booking')">
+                                Hotel Accommodation Analysis
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="setQuery('weather_delay')">
+                                Weather Delay Response
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Streaming Status:</h6>
+                        <div id="streaming-stats" class="small text-muted">
+                            Ready to stream...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Streaming Display -->
+        <div class="test-section">
+            <div class="llm-streams-container" id="streams-container">
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-comment-dots fa-3x mb-3"></i>
+                    <h4>Live LLM Reasoning</h4>
+                    <p>Start a test to see real-time token streaming and reasoning steps</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Panel -->
+        <div class="test-section">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="text-center p-3">
+                        <h4 id="total-tokens" class="mb-1">0</h4>
+                        <small class="text-muted">Total Tokens</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center p-3">
+                        <h4 id="active-streams" class="mb-1">0</h4>
+                        <small class="text-muted">Active Streams</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center p-3">
+                        <h4 id="avg-speed" class="mb-1">0</h4>
+                        <small class="text-muted">Tokens/sec</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center p-3">
+                        <h4 id="total-tests" class="mb-1">0</h4>
+                        <small class="text-muted">Tests Run</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Debug Panel -->
+        <div class="test-section">
+            <div class="test-interface">
+                <h6><i class="fas fa-bug"></i> Debug Information</h6>
+                <div id="debug-log" class="small" style="max-height: 200px; overflow-y: auto; background: #f8f9fa; padding: 1rem; border-radius: 6px;">
+                    <div class="text-muted">Debug information will appear here...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top" style="background: rgba(0, 0, 0, 0.1); backdrop-filter: blur(10px);">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/streaming">
+                    <i class="fas fa-stream"></i> Streaming Test
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/streaming.js"></script>
+    <script>
+        // Global variables
+        let streamingClient = null;
+        let activeStreams = 0;
+        let totalTokens = 0;
+        let totalTests = 0;
+        let testStartTime = null;
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeStreamingClient();
+            setupEventHandlers();
+            setupQuickQueries();
+        });
+
+        function initializeStreamingClient() {
+            streamingClient = new LLMStreamingClient({
+                autoConnect: true,
+                retryDelay: 2000,
+                maxRetries: 10
+            });
+
+            // Set up UI elements
+            streamingClient.setStatusElement(document.getElementById('connection-status'));
+            streamingClient.setStreamContainer(document.getElementById('streams-container'));
+
+            // Set up event handlers
+            streamingClient.on('connected', () => {
+                debugLog('✅ WebSocket connected successfully');
+                updateConnectionStatus('connected');
+            });
+
+            streamingClient.on('disconnected', () => {
+                debugLog('🔌 WebSocket disconnected');
+                updateConnectionStatus('disconnected');
+            });
+
+            streamingClient.on('error', (error) => {
+                debugLog(`❌ WebSocket error: ${error}`);
+                updateConnectionStatus('failed');
+            });
+
+            streamingClient.on('llm_test_stream', (data) => {
+                handleLLMTestStream(data);
+            });
+
+            streamingClient.on('test_complete', (data) => {
+                handleTestComplete(data);
+            });
+
+            streamingClient.on('simulation_event', (data) => {
+                handleSimulationEvent(data);
+            });
+        }
+
+        function setupEventHandlers() {
+            // Test streaming button
+            document.getElementById('test-streaming-btn').addEventListener('click', async function() {
+                const query = document.getElementById('query-input').value.trim();
+                
+                if (!query) {
+                    alert('Please enter a test query');
+                    return;
+                }
+
+                await startLLMTest(query);
+            });
+
+            // Clear streams button
+            document.getElementById('clear-streams-btn').addEventListener('click', function() {
+                streamingClient.clearStreams();
+                resetStats();
+                debugLog('🧹 Streams cleared');
+            });
+
+            // Day simulation button
+            document.getElementById('day-simulation-btn').addEventListener('click', async function() {
+                await startDaySimulation();
+            });
+
+            // Enter key in textarea
+            document.getElementById('query-input').addEventListener('keydown', function(event) {
+                if (event.ctrlKey && event.key === 'Enter') {
+                    document.getElementById('test-streaming-btn').click();
+                }
+            });
+        }
+
+        function setupQuickQueries() {
+            const queries = {
+                'crew_duty': 'Analyze crew duty time violation: Flight UA789 delayed 5 hours, current crew started duty at 06:00 and would exceed 14-hour FAA limit. Available spare crew at hub.',
+                'hotel_booking': 'Operations support needed: 2 crew members stranded at DFW due to canceled connecting flight. Need hotel accommodation with crew rates and airport transportation.',
+                'weather_delay': 'Weather delay analysis: Severe thunderstorms at ATL causing 3-hour delays. Evaluate crew scheduling, passenger rebooking, and resource allocation options.'
+            };
+
+            window.setQuery = function(type) {
+                document.getElementById('query-input').value = queries[type] || '';
+            };
+        }
+
+        async function startLLMTest(query) {
+            const button = document.getElementById('test-streaming-btn');
+            const originalContent = button.innerHTML;
+            
+            try {
+                button.disabled = true;
+                button.innerHTML = '<div class="loading-spinner"></div> Streaming...';
+                
+                testStartTime = Date.now();
+                activeStreams++;
+                totalTests++;
+                updateStats();
+                
+                debugLog(`🚀 Starting LLM test: "${query.substring(0, 50)}..."`);
+                
+                const result = await streamingClient.testLLMStreaming(query);
+                debugLog(`✅ Test initiated with ID: ${result.stream_id}`);
+                
+            } catch (error) {
+                debugLog(`❌ Error starting test: ${error.message}`);
+                alert(`Error: ${error.message}`);
+            } finally {
+                button.disabled = false;
+                button.innerHTML = originalContent;
+            }
+        }
+
+        async function startDaySimulation() {
+            const button = document.getElementById('day-simulation-btn');
+            const originalContent = button.innerHTML;
+            
+            try {
+                button.disabled = true;
+                button.innerHTML = '<div class="loading-spinner"></div> Starting...';
+                
+                debugLog('🎯 Starting day simulation with live LLM reasoning...');
+                
+                const result = await streamingClient.startDaySimulation();
+                debugLog(`✅ Day simulation started: ${result.simulation_id}`);
+                
+            } catch (error) {
+                debugLog(`❌ Error starting day simulation: ${error.message}`);
+                alert(`Error: ${error.message}`);
+            } finally {
+                button.disabled = false;
+                button.innerHTML = originalContent;
+            }
+        }
+
+        function handleLLMTestStream(data) {
+            const event = data.event;
+            
+            if (event.type === 'token') {
+                totalTokens++;
+                updateStats();
+                
+                // Update streaming speed
+                if (testStartTime) {
+                    const elapsed = (Date.now() - testStartTime) / 1000;
+                    const speed = Math.round(totalTokens / elapsed);
+                    document.getElementById('avg-speed').textContent = speed;
+                }
+            } else if (event.type === 'reasoning_step') {
+                debugLog(`🧠 Reasoning step: ${event.step} - ${event.content}`);
+            }
+        }
+
+        function handleTestComplete(data) {
+            activeStreams = Math.max(0, activeStreams - 1);
+            updateStats();
+            
+            if (data.type === 'llm_test_error') {
+                debugLog(`❌ Test failed: ${data.error}`);
+            } else {
+                debugLog(`✅ Test completed: ${data.stream_id}`);
+                
+                if (data.result) {
+                    const tokens = data.result.llm_rationale ? data.result.llm_rationale.length : 0;
+                    debugLog(`📊 Response: ${tokens} characters generated`);
+                }
+            }
+        }
+
+        function handleSimulationEvent(data) {
+            const event = data.event;
+            
+            if (event.type === 'llm_crew_reasoning' || event.type === 'llm_ops_reasoning') {
+                const llmEvent = event.llm_event;
+                
+                if (llmEvent.type === 'token') {
+                    totalTokens++;
+                    updateStats();
+                } else if (llmEvent.type === 'reasoning_step') {
+                    debugLog(`🎯 Simulation ${event.type}: ${llmEvent.step}`);
+                }
+            } else if (event.type === 'disruption_detected') {
+                debugLog(`🚨 Disruption: ${event.description}`);
+            } else if (event.type === 'disruption_resolved') {
+                debugLog(`✅ Resolution: ${event.resolution}`);
+            }
+        }
+
+        function updateConnectionStatus(status) {
+            const statusElement = document.getElementById('connection-status');
+            const statusText = {
+                'connected': '🟢 Connected - Ready to Stream',
+                'disconnected': '🟡 Disconnected - Retrying...',
+                'failed': '🔴 Connection Failed'
+            };
+            
+            statusElement.textContent = statusText[status] || status;
+            statusElement.className = `connection-status ${status}`;
+        }
+
+        function updateStats() {
+            document.getElementById('total-tokens').textContent = totalTokens.toLocaleString();
+            document.getElementById('active-streams').textContent = activeStreams;
+            document.getElementById('total-tests').textContent = totalTests;
+        }
+
+        function resetStats() {
+            totalTokens = 0;
+            activeStreams = 0;
+            totalTests = 0;
+            testStartTime = null;
+            updateStats();
+            document.getElementById('avg-speed').textContent = '0';
+        }
+
+        function debugLog(message) {
+            const debugContainer = document.getElementById('debug-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `<span class="text-muted">[${timestamp}]</span> ${message}`;
+            debugContainer.appendChild(logEntry);
+            debugContainer.scrollTop = debugContainer.scrollHeight;
+            
+            // Keep only last 50 entries
+            while (debugContainer.children.length > 50) {
+                debugContainer.removeChild(debugContainer.firstChild);
+            }
+        }
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', function(event) {
+            if (event.ctrlKey) {
+                switch(event.key) {
+                    case 'Enter':
+                        event.preventDefault();
+                        document.getElementById('test-streaming-btn').click();
+                        break;
+                    case 'l':
+                        event.preventDefault();
+                        document.getElementById('clear-streams-btn').click();
+                        break;
+                }
+            }
+        });
+    </script>
+</body>
+</html>

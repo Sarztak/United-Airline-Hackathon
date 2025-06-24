@@ -1,0 +1,48 @@
+[
+    {
+      "id": "no_legal_crew",
+      "title": "No Legal Crew Available",
+      "text": "If no legal crew can be found due to rest or duty violations, escalate to ops center. Contact duty manager for extension approval or alternative crew assignment."
+    },
+    {
+      "id": "hotel_overflow",
+      "title": "Hotel Overflow",
+      "text": "In case of full hotel capacity, crew must be booked in backup lodging within 50 miles. Notify crew scheduling immediately and authorize additional transportation if needed."
+    },
+    {
+      "id": "weather_delay",
+      "title": "Weather Delay Protocol",
+      "text": "For weather delays, crew duty may be extended by up to 2 hours with manager approval. Monitor continuously for further delays requiring crew replacement."
+    },
+    {
+      "id": "maintenance_delay",
+      "title": "Maintenance Delay",
+      "text": "If maintenance exceeds 4 hours, crew should be reassigned. Begin spare crew search, passenger communications, and consider alternate aircraft deployment."
+    },
+    {
+      "id": "crew_repositioning",
+      "title": "Crew Repositioning Guidelines",
+      "text": "When repositioning crew via other flights, ensure minimum connection times are met. Priority boarding and aisle seats should be arranged when possible."
+    },
+    {
+      "id": "emergency_accommodations",
+      "title": "Emergency Accommodation Protocol",
+      "text": "If standard crew hotels are unavailable, authorize premium accommodations up to 150% of normal rate. Document decision and notify finance within 24 hours."
+    },
+    {
+      "id": "duty_time_extension",
+      "title": "Duty Time Extension Rules",
+      "text": "Flight duty periods may be extended beyond normal limits only for weather or ATC delays. Requires duty manager approval and must not exceed regulatory maximums."
+    },
+    {
+      "id": "spare_crew_activation",
+      "title": "Spare Crew Activation",
+      "text": "Activate spare crew for delays exceeding 2 hours when original crew approaches duty limits. Coordinate with crew scheduling for optimal positioning."
+    },
+    {
+      "id": "irregular_ops_escalation",
+      "title": "Irregular Operations Escalation",
+      "text": "For system-wide disruptions affecting multiple flights, activate emergency command center and implement IROP procedures. Senior management notification required."
+    }
+  ]
+  
