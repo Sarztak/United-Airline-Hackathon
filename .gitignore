@@ -205,3 +205,10 @@ __marimo__/
 
 #streamlit
 .streamlit/
+
+#vscode debug files
+.vscode/
+
+#
+.prompt_test
+.python_version
